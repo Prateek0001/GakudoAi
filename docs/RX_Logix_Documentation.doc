@@ -1,0 +1,211 @@
+RX LOGIX - TECHNICAL DOCUMENTATION
+Version 1.0
+Last Updated: [Current Date]
+
+TABLE OF CONTENTS
+1. Introduction
+2. Authentication Module
+3. Profile Module
+4. Quiz Module
+5. Technical Architecture
+6. API Documentation
+7. Constants & Configurations
+
+=======================================================
+
+1. INTRODUCTION
+=======================================================
+1.1 Purpose
+   - Student assessment platform built with Flutter
+   - Manages student profiles, quizzes, and assessments
+
+1.2 Technical Stack
+   - Framework: Flutter
+   - State Management: BLoC Pattern
+   - Local Storage: SharedPreferences
+   - Architecture: Clean Architecture
+
+2. AUTHENTICATION MODULE
+=======================================================
+2.1 Login Feature
+    a) Implementation Files:
+       - lib/screens/login_screen.dart
+       - lib/bloc/login_bloc.dart
+       - lib/repositories/auth/auth_repository_impl.dart
+
+    b) API Endpoints:
+       POST http://20.40.48.188:8000/api/v1/token
+       Headers: {
+           'accept': 'application/json'
+       }
+       Parameters: {
+           username: string
+           password: string
+       }
+
+    c) Success Response:
+       {
+           "access_token": "jwt_token",
+           "token_type": "bearer"
+       }
+
+2.2 Registration Feature
+    a) Implementation Files:
+       - lib/screens/signup_screen.dart
+       - lib/bloc/signup_bloc.dart
+
+    b) API Endpoint:
+       POST http://20.40.48.188:8000/api/v1/register/
+       Body: {
+           "email": string,
+           "full_name": string,
+           "medium": string,
+           "mobile_number": string,
+           "password": string,
+           "school_name": string,
+           "standard": integer,
+           "username": string
+       }
+
+2.3 Forgot Password Feature
+    a) Implementation:
+       - Integrated within login screen
+       - Email-based password reset
+
+    b) API Endpoint:
+       POST /api/v1/users/forgot-password/?email={email}
+
+3. PROFILE MODULE
+=======================================================
+3.1 Profile Management
+    Components:
+    - Profile Screen (lib/screens/profile_screen.dart)
+    - Profile BLoC (lib/bloc/profile_bloc.dart)
+    - Profile Model (lib/models/profile.dart)
+
+3.2 Profile Data Structure
+    {
+        "full_name": string,
+        "email": string,
+        "mobile_number": string,
+        "school_name": string,
+        "medium": string,
+        "standard": integer,
+        "location": string,
+        "segment": string,
+        "stream": string,
+        "father_profession": string,
+        "mother_profession": string
+    }
+
+4. QUIZ MODULE
+=======================================================
+4.1 Components
+    - Quiz List Screen (lib/screens/quiz_list_screen.dart)
+    - Quiz Screen (lib/screens/quiz_screen.dart)
+    - Quiz BLoC (lib/bloc/quiz_bloc.dart)
+
+4.2 Features
+    - Multiple choice questions
+    - Progress tracking
+    - Score calculation
+    - Quiz completion status
+
+4.3 Data Models
+    Quiz {
+        id: string
+        title: string
+        questions: List<Question>
+        isCompleted: boolean
+    }
+
+    Question {
+        id: string
+        text: string
+        options: List<Option>
+        correctOptionId: string
+    }
+
+5. TECHNICAL ARCHITECTURE
+=======================================================
+5.1 State Management
+    BLoC Pattern Implementation:
+    - Events: User actions
+    - States: UI states
+    - BLoC: Business logic
+    - Repository: Data layer
+
+5.2 File Structure
+    lib/
+    ├── bloc/           # Business Logic Components
+    ├── models/         # Data Models
+    ├── repositories/   # Data Layer
+    ├── screens/        # UI Components
+    ├── constants/      # App Constants
+    └── utils/          # Utility Functions
+
+6. API DOCUMENTATION
+=======================================================
+6.1 Base URL
+    http://20.40.48.188:8000
+
+6.2 Authentication Endpoints
+    - Login: POST /api/v1/token
+    - Register: POST /api/v1/register
+    - Forgot Password: POST /api/v1/users/forgot-password
+
+6.3 Error Handling
+    Standard Error Response:
+    {
+        "detail": [
+            {
+                "loc": ["string", 0],
+                "msg": "string",
+                "type": "string"
+            }
+        ]
+    }
+
+7. CONSTANTS & CONFIGURATIONS
+=======================================================
+7.1 String Constants (lib/constants/string_constants.dart)
+    - App text
+    - Error messages
+    - Success messages
+    - Label text
+
+7.2 App Constants (lib/constants/app_constants.dart)
+    - Spacing values
+    - Font sizes
+    - Border radius
+    - Button dimensions
+    - Input field properties
+
+7.3 Theme Configuration (lib/config/theme_config.dart)
+    - Light theme
+    - Dark theme
+    - Color schemes
+    - Typography
+    - Component styles
+
+=======================================================
+APPENDIX A: DEPENDENCIES
+=======================================================
+Main Dependencies:
+- flutter_bloc: ^8.1.3
+- shared_preferences: ^2.2.0
+- provider: ^6.0.5
+- http: ^1.1.0
+- flutter_screenutil: ^5.8.4
+
+=======================================================
+APPENDIX B: SETUP INSTRUCTIONS
+=======================================================
+1. Clone repository
+2. Install dependencies
+3. Configure environment
+4. Run application
+
+=======================================================
+END OF DOCUMENTATION
+======================================================= 
