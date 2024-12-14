@@ -4,9 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/auth_response.dart';
 import '../../models/register_response.dart';
 import 'auth_repository.dart';
+import '../../models/user_profile.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  static const String _baseUrl = 'http://20.40.48.188:8000';
+  static const String _baseUrl = 'http://98.70.49.14:8000';
   static const String _tokenKey = 'auth_token';
 
   @override
@@ -22,6 +23,20 @@ class AuthRepositoryImpl implements AuthRepository {
         final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_tokenKey, authResponse.accessToken);
+
+        // Fetch user profile after successful login
+        try {
+          final userProfile = await getUserProfile(authResponse.accessToken);
+          // Convert UserProfile object to JSON-compatible map
+          final userProfileJson = userProfile.toJson();
+
+          // Store JSON string in SharedPreferences
+          await prefs.setString('user_profile', jsonEncode(userProfileJson));
+        } catch (e) {
+          print('Failed to fetch user profile: ${e.toString()}');
+          // Don't throw the error as login was successful
+        }
+
         return authResponse.accessToken;
       } else {
         final error = jsonDecode(response.body);
@@ -29,6 +44,28 @@ class AuthRepositoryImpl implements AuthRepository {
       }
     } catch (e) {
       throw Exception('Failed to connect to server ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<UserProfile> getUserProfile(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/api/v1/users/profile'),
+        headers: {
+          'accept': 'application/json',
+          'api-key': token,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return UserProfile.fromJson(jsonDecode(response.body));
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to fetch user profile');
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch user profile: ${e.toString()}');
     }
   }
 
@@ -76,7 +113,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/v1/register/'),
+        Uri.parse('$_baseUrl/api/v1/register'),
         headers: {
           'accept': 'application/json',
           'Content-Type': 'application/json',

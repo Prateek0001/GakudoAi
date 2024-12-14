@@ -1,74 +1,119 @@
 import 'package:flutter/material.dart';
-import '../constants/string_constants.dart';
-import '../utils/responsive_helper.dart';
-import '../screens/quiz_list_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../constants/string_constants.dart';
+import '../screens/quiz_list_screen.dart';
 import '../bloc/quiz_bloc.dart';
+import '../bloc/dashboard_bloc.dart';
+import '../bloc/dashboard_event.dart';
+import '../bloc/dashboard_state.dart';
+import '../services/user_service.dart';
+import '../repositories/auth/auth_repository.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => DashboardBloc()..add(LoadUserProfileEvent()),
+      child: const DashboardView(),
+    );
+  }
+}
+
+class DashboardView extends StatelessWidget {
+  const DashboardView({super.key});
+
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      final authRepository = context.read<AuthRepository>();
+      await authRepository.logout();
+      await UserService.clearUserData();
+
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error logging out: ${e.toString()}')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                StringConstants.dashboard,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Welcome back, Arv12345!',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-              ),
-              const SizedBox(height: 32),
-              _buildDashboardCard(
-                context,
-                title: '1. Complete/Update Profile',
-                icon: Icons.person_outline,
-                onTap: () {
-                  Navigator.pushNamed(context, '/profile');
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildDashboardCard(
-                context,
-                title: '2. Complete Tests',
-                icon: Icons.bar_chart,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BlocProvider(
-                        create: (context) => QuizBloc(),
-                        child: const QuizListScreen(),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildDashboardCard(
-                context,
-                title: '3. Download Report',
-                icon: Icons.cloud_download_outlined,
-                onTap: () {
-                  // TODO: Implement report download
-                },
-              ),
-            ],
+      appBar: AppBar(
+        title: Text(StringConstants.dashboard),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _handleLogout(context),
           ),
-        ),
+        ],
+      ),
+      body: BlocBuilder<DashboardBloc, DashboardState>(
+        builder: (context, state) {
+          if (state is DashboardLoadingState) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is DashboardErrorState) {
+            return Center(child: Text(state.message));
+          } else if (state is DashboardLoadedState) {
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome back, ${state.userProfile.fullName}!',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
+                    const SizedBox(height: 32),
+                    _buildDashboardCard(
+                      context,
+                      title: '1. Complete/Update Profile',
+                      icon: Icons.person_outline,
+                      onTap: () {
+                        Navigator.pushNamed(context, '/profile');
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDashboardCard(
+                      context,
+                      title: '2. Complete Tests',
+                      icon: Icons.bar_chart,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BlocProvider(
+                              create: (context) => QuizBloc(),
+                              child: const QuizListScreen(),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDashboardCard(
+                      context,
+                      title: '3. Download Report',
+                      icon: Icons.cloud_download_outlined,
+                      onTap: () {
+                        // TODO: Implement report download
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        },
       ),
     );
   }
@@ -112,4 +157,4 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

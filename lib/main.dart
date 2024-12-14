@@ -13,17 +13,22 @@ import 'constants/string_constants.dart';
 import 'package:provider/provider.dart';
 import 'config/theme_config.dart';
 import 'providers/theme_provider.dart';
+import 'repositories/auth/auth_repository.dart';
+import 'repositories/auth/auth_repository_impl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Bloc.observer = AppBlocObserver();
   final prefs = await SharedPreferences.getInstance();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(prefs),
-      child: ScreenUtilInit(
-        designSize: const Size(390, 844),
-        builder: (context, child) => MyApp(prefs),
+    RepositoryProvider<AuthRepository>(
+      create: (context) => AuthRepositoryImpl(),
+      child: ChangeNotifierProvider(
+        create: (_) => ThemeProvider(prefs),
+        child: ScreenUtilInit(
+          designSize: const Size(390, 844),
+          builder: (context, child) => MyApp(prefs),
+        ),
       ),
     ),
   );

@@ -1,11 +1,7 @@
-import 'package:equatable/equatable.dart';
-import '../models/user_data.dart';
+import '../models/user_profile.dart';
 
-abstract class DashboardState extends Equatable {
+abstract class DashboardState {
   const DashboardState();
-
-  @override
-  List<Object?> get props => [];
 }
 
 class DashboardInitial extends DashboardState {}
@@ -13,19 +9,13 @@ class DashboardInitial extends DashboardState {}
 class DashboardLoadingState extends DashboardState {}
 
 class DashboardLoadedState extends DashboardState {
-  final UserData userData;
+  final UserProfile userProfile;
 
-  const DashboardLoadedState(this.userData);
-
-  @override
-  List<Object?> get props => [userData];
+  const DashboardLoadedState(this.userProfile);
 }
 
 class DashboardErrorState extends DashboardState {
   final String message;
 
   const DashboardErrorState(this.message);
-
-  @override
-  List<Object?> get props => [message];
 } 

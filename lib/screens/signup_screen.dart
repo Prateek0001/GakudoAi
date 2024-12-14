@@ -33,12 +33,13 @@ class _SignupViewState extends State<SignupView> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String _completePhoneNumber = '';
 
   void _signup(BuildContext context) {
     if (_fullNameController.text.isEmpty ||
         _usernameController.text.isEmpty ||
         _emailController.text.isEmpty ||
-        _phoneController.text.isEmpty ||
+        _completePhoneNumber.isEmpty ||
         _passwordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -60,7 +61,7 @@ class _SignupViewState extends State<SignupView> {
             fullName: _fullNameController.text,
             username: _usernameController.text,
             password: _passwordController.text,
-            mobileNumber: _phoneController.text,
+            mobileNumber: _completePhoneNumber,
           ),
         );
   }
@@ -153,7 +154,6 @@ class _SignupViewState extends State<SignupView> {
                       ),
                       const SizedBox(height: 16),
                       IntlPhoneField(
-                        controller: _phoneController,
                         decoration: InputDecoration(
                           labelText: StringConstants.phoneNumber,
                           prefixIcon: const Icon(Icons.phone),
@@ -177,7 +177,8 @@ class _SignupViewState extends State<SignupView> {
                         ),
                         initialCountryCode: 'IN',
                         onChanged: (phone) {
-                          _phoneController.text = phone.completeNumber;
+                          _completePhoneNumber = phone.completeNumber;
+                          _phoneController.text = phone.number;
                         },
                       ),
                       const SizedBox(height: 16),

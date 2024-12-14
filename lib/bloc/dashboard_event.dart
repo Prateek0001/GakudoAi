@@ -9,4 +9,6 @@ abstract class DashboardEvent extends Equatable {
 
 class LoadDashboardEvent extends DashboardEvent {}
 
-class LogoutEvent extends DashboardEvent {} 
+class LogoutEvent extends DashboardEvent {}
+
+class LoadUserProfileEvent extends DashboardEvent {} 

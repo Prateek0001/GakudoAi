@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../services/user_service.dart';
 import 'profile_event.dart';
 import 'profile_state.dart';
 import '../models/profile.dart';
@@ -18,12 +19,22 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     try {
       emit(ProfileLoadingState());
       
-      final prefs = await SharedPreferences.getInstance();
-      final profileJson = prefs.getString('user_profile');
+      final userProfile = await UserService.getCurrentUser();
       
-      if (profileJson != null) {
-        final profileMap = json.decode(profileJson);
-        final profile = Profile.fromJson(profileMap);
+      if (userProfile != null) {
+        final profile = Profile(
+          fullName: userProfile.fullName,
+          email: userProfile.email,
+          mobileNumber: userProfile.mobileNumber,
+          schoolName: userProfile.schoolName,
+          medium: userProfile.medium,
+          standard: userProfile.standard,
+          location: '', // These fields are not in UserProfile
+          segment: 'School',
+          stream: '',
+          fatherProfession: '',
+          motherProfession: '',
+        );
         emit(ProfileLoadedState(profile));
       } else {
         emit(ProfileInitial());

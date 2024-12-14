@@ -1,40 +1,27 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../services/user_service.dart';
 import 'dashboard_event.dart';
 import 'dashboard_state.dart';
-import '../models/user_data.dart';
 
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   DashboardBloc() : super(DashboardInitial()) {
-    on<LoadDashboardEvent>(_onLoadDashboard);
-    on<LogoutEvent>(_onLogout);
+    on<LoadUserProfileEvent>(_onLoadUserProfile);
   }
 
-  Future<void> _onLoadDashboard(
-    LoadDashboardEvent event,
+  Future<void> _onLoadUserProfile(
+    LoadUserProfileEvent event,
     Emitter<DashboardState> emit,
   ) async {
     try {
       emit(DashboardLoadingState());
-      // TODO: Implement your dashboard data loading logic here
-      await Future.delayed(const Duration(seconds: 1)); // Simulating API call
-      
-      final userData = UserData(
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '+1234567890',
-      );
-      
-      emit(DashboardLoadedState(userData));
+      final user = await UserService.getCurrentUser();
+      if (user != null) {
+        emit(DashboardLoadedState(user));
+      } else {
+        emit(const DashboardErrorState('User profile not found'));
+      }
     } catch (e) {
       emit(DashboardErrorState(e.toString()));
     }
-  }
-
-  Future<void> _onLogout(
-    LogoutEvent event,
-    Emitter<DashboardState> emit,
-  ) async {
-    // TODO: Implement logout logic here
-    emit(DashboardInitial());
   }
 } 
