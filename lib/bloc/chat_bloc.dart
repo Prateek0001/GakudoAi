@@ -1,24 +1,26 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:dart_openai/dart_openai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../constants/app_constants.dart';
 import '../models/chat_message.dart';
+import '../models/user_profile.dart';
 import 'chat_event.dart';
 import 'chat_state.dart';
+import '../repositories/chat/chat_repository.dart';
+import '../constants/storage_constants.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final SharedPreferences prefs;
+  final ChatRepository chatRepository;
   List<ChatMessage> messages = [];
   List<ChatMessage> allMessages = [];
 
-  ChatBloc(this.prefs) : super(ChatInitial()) {
-    OpenAI.apiKey = AppConstants.openAiKey;
-
+  ChatBloc(this.prefs, this.chatRepository) : super(ChatInitial()) {
     on<SendMessageEvent>(_onSendMessage);
     on<LoadChatHistoryEvent>(_onLoadChatHistory);
     on<NewChatEvent>(_onNewChat);
     on<LoadConversationEvent>(_onLoadConversation);
+
+    add(LoadChatHistoryEvent());
   }
 
   Future<void> _onSendMessage(
@@ -26,44 +28,47 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     try {
-      final currentState = state;
-      if (currentState is ChatLoaded) {
-        // Add user message
-        final userMessage = ChatMessage(
-          content: event.message,
-          role: MessageRole.user,
+      // Add user message
+      final userMessage = ChatMessage(
+        content: event.message,
+        role: MessageRole.user,
+      );
+      messages = [...messages, userMessage];
+      allMessages = [...allMessages, userMessage];
+      emit(ChatLoaded(messages: messages, isTyping: true));
+
+      // Get token and username from SharedPreferences
+      final token = prefs.getString(StorageConstants.authToken);
+      final userProfileJson = prefs.getString(StorageConstants.userProfile);
+      if (token == null || userProfileJson == null) {
+        throw Exception('User not authenticated');
+      }
+      final userProfile = UserProfile.fromJson(jsonDecode(userProfileJson));
+
+      try {
+        // Get AI response from API
+        final response = await chatRepository.sendMessage(
+          question: event.message,
+          username: userProfile.username,
+          token: token,
         );
-        messages = [...messages, userMessage];
-        emit(ChatLoaded(messages: messages, isTyping: true));
 
-        // Get AI response
-        final response = await OpenAI.instance.chat.create(
-          model: AppConstants.openAiModel,
-          messages: messages
-              .map((msg) => OpenAIChatCompletionChoiceMessageModel(
-                    content: [
-                      OpenAIChatCompletionChoiceMessageContentItemModel.text(
-                          msg.content)
-                    ],
-                    role: msg.role == MessageRole.user
-                        ? OpenAIChatMessageRole.user
-                        : OpenAIChatMessageRole.assistant,
-                  ))
-              .toList(),
+        // Add AI response
+        final aiMessage = ChatMessage(
+          content: response,
+          role: MessageRole.assistant,
         );
+        messages = [...messages, aiMessage];
+        allMessages = [...allMessages, aiMessage];
 
-        if (response.choices.isNotEmpty) {
-          // Add AI response
-          final aiMessage = ChatMessage(
-            content: response.choices.first.message.content.toString(),
-            role: MessageRole.assistant,
-          );
-          messages = [...messages, aiMessage];
-          emit(ChatLoaded(messages: messages));
+        // Save to local storage before emitting new state
+        await _saveChatHistory();
 
-          // Save to local storage
-          _saveChatHistory();
-        }
+        emit(ChatLoaded(messages: messages));
+      } catch (e) {
+        // If API call fails, show error but keep user message
+        emit(ChatLoaded(messages: messages));
+        emit(ChatError('Failed to get response: ${e.toString()}'));
       }
     } catch (e) {
       emit(ChatError(e.toString()));
@@ -76,7 +81,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     try {
       emit(ChatLoading());
-      final chatHistory = prefs.getStringList('chat_history');
+      final chatHistory = prefs.getStringList(StorageConstants.chatHistory);
       if (chatHistory != null) {
         allMessages = chatHistory
             .map((msg) => ChatMessage.fromMap(json.decode(msg)))
@@ -115,6 +120,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   Future<void> _saveChatHistory() async {
     final chatHistory =
         allMessages.map((msg) => json.encode(msg.toMap())).toList();
-    await prefs.setStringList('chat_history', chatHistory);
+    await prefs.setStringList(StorageConstants.chatHistory, chatHistory);
   }
 }

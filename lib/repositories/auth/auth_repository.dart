@@ -12,9 +12,9 @@ abstract class AuthRepository {
     required String username,
     required String password,
     required String mobileNumber,
+    required String standard,
     String medium = "English",
     String schoolName = "Default School",
-    int standard = 10,
   });
   Future<UserProfile> getUserProfile(String token);
-} 
+}

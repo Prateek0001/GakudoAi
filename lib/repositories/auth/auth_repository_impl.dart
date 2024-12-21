@@ -5,36 +5,31 @@ import '../../models/auth_response.dart';
 import '../../models/register_response.dart';
 import 'auth_repository.dart';
 import '../../models/user_profile.dart';
+import '../../constants/api_constants.dart';
+import '../../constants/storage_constants.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  static const String _baseUrl = 'http://98.70.49.14:8000';
-  static const String _tokenKey = 'auth_token';
-
   @override
   Future<String> login(String username, String password) async {
     try {
       final response = await http.post(
         Uri.parse(
-            '$_baseUrl/api/v1/token?username=$username&password=$password'),
+            '${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}?username=$username&password=$password'),
         headers: {'accept': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         final authResponse = AuthResponse.fromJson(jsonDecode(response.body));
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_tokenKey, authResponse.accessToken);
+        await prefs.setString(
+            StorageConstants.authToken, authResponse.accessToken);
 
-        // Fetch user profile after successful login
         try {
           final userProfile = await getUserProfile(authResponse.accessToken);
-          // Convert UserProfile object to JSON-compatible map
-          final userProfileJson = userProfile.toJson();
-
-          // Store JSON string in SharedPreferences
-          await prefs.setString('user_profile', jsonEncode(userProfileJson));
+          await prefs.setString(
+              StorageConstants.userProfile, jsonEncode(userProfile.toJson()));
         } catch (e) {
           print('Failed to fetch user profile: ${e.toString()}');
-          // Don't throw the error as login was successful
         }
 
         return authResponse.accessToken;
@@ -51,7 +46,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<UserProfile> getUserProfile(String token) async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/api/v1/users/profile'),
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.userProfileEndpoint}'),
         headers: {
           'accept': 'application/json',
           'api-key': token,
@@ -72,20 +67,21 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
+    await prefs.remove(StorageConstants.authToken);
   }
 
   @override
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(_tokenKey);
+    return prefs.containsKey(StorageConstants.authToken);
   }
 
   @override
   Future<String> forgotPassword(String email) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/v1/users/forgot-password/?email=$email'),
+        Uri.parse(
+            '${ApiConstants.baseUrl}${ApiConstants.forgotPasswordEndpoint}?email=$email'),
         headers: {'accept': 'application/json'},
       );
 
@@ -107,13 +103,13 @@ class AuthRepositoryImpl implements AuthRepository {
     required String username,
     required String password,
     required String mobileNumber,
+    required String standard,
     String medium = "English",
     String schoolName = "Default School",
-    int standard = 10,
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/api/v1/register'),
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.registerEndpoint}'),
         headers: {
           'accept': 'application/json',
           'Content-Type': 'application/json',
@@ -124,9 +120,9 @@ class AuthRepositoryImpl implements AuthRepository {
           'username': username,
           'password': password,
           'mobile_number': mobileNumber,
+          'standard': standard,
           'medium': medium,
           'school_name': schoolName,
-          'standard': standard,
         }),
       );
 

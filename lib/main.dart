@@ -15,14 +15,23 @@ import 'config/theme_config.dart';
 import 'providers/theme_provider.dart';
 import 'repositories/auth/auth_repository.dart';
 import 'repositories/auth/auth_repository_impl.dart';
+import 'repositories/chat/chat_repository.dart';
+import 'repositories/chat/chat_repository_impl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Bloc.observer = AppBlocObserver();
   final prefs = await SharedPreferences.getInstance();
   runApp(
-    RepositoryProvider<AuthRepository>(
-      create: (context) => AuthRepositoryImpl(),
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<AuthRepository>(
+          create: (context) => AuthRepositoryImpl(),
+        ),
+        RepositoryProvider<ChatRepository>(
+          create: (context) => ChatRepositoryImpl(),
+        ),
+      ],
       child: ChangeNotifierProvider(
         create: (_) => ThemeProvider(prefs),
         child: ScreenUtilInit(
@@ -55,7 +64,10 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignupScreen(),
         '/dashboard': (context) => const DashboardScreen(),
         '/chat': (context) => BlocProvider(
-              create: (context) => ChatBloc(prefs),
+              create: (context) => ChatBloc(
+                prefs,
+                context.read<ChatRepository>(),
+              ),
               child: const ChatScreen(),
             ),
         '/profile': (context) => const ProfileScreen(),
@@ -63,5 +75,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-

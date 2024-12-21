@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rx_logix/services/user_service.dart';
 import '../bloc/profile_bloc.dart';
 import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
@@ -38,6 +39,28 @@ class _ProfileViewState extends State<ProfileView> {
 
   String _selectedSegment = 'School';
   String _selectedMedium = 'English';
+
+  final List<String> _mediumOptions = ['English', 'English1', 'Hindi'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    final user = await UserService.getCurrentUser();
+    if (user != null && mounted) {
+      setState(() {
+        _nameController.text = user.fullName;
+        _emailController.text = user.email;
+        _phoneController.text = user.mobileNumber;
+        _schoolNameController.text = user.schoolName;
+        _standardController.text = user.standard.toString();
+        _selectedMedium = user.medium;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +171,7 @@ class _ProfileViewState extends State<ProfileView> {
                                   _buildDropdown(
                                     label: 'Medium',
                                     value: _selectedMedium,
-                                    items: const ['English', 'Hindi'],
+                                    items: _mediumOptions,
                                     onChanged: (value) {
                                       setState(() {
                                         _selectedMedium = value!;
@@ -284,7 +307,7 @@ class _ProfileViewState extends State<ProfileView> {
     required void Function(String?) onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: value,
+      value: items.contains(value) ? value : items[0],
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(

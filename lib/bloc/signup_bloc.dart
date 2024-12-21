@@ -22,10 +22,11 @@ class SignupBloc extends Bloc<SignupEvent, SignupState> {
         username: event.username,
         password: event.password,
         mobileNumber: event.mobileNumber,
+        standard: event.standard,
       );
       emit(SignupSuccessState());
     } catch (e) {
       emit(SignupErrorState(e.toString()));
     }
   }
-} 
+}

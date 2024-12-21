@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rx_logix/repositories/chat/chat_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/string_constants.dart';
 import '../screens/quiz_list_screen.dart';
+import '../screens/chat_screen.dart';
 import '../bloc/quiz_bloc.dart';
+import '../bloc/chat_bloc.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../bloc/dashboard_event.dart';
 import '../bloc/dashboard_state.dart';
@@ -21,8 +25,15 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-class DashboardView extends StatelessWidget {
+class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
+
+  @override
+  State<DashboardView> createState() => _DashboardViewState();
+}
+
+class _DashboardViewState extends State<DashboardView> {
+  int _selectedIndex = 0;
 
   Future<void> _handleLogout(BuildContext context) async {
     try {
@@ -30,7 +41,7 @@ class DashboardView extends StatelessWidget {
       await authRepository.logout();
       await UserService.clearUserData();
 
-      if (context.mounted) {
+      if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       }
     } catch (e) {
@@ -40,52 +51,101 @@ class DashboardView extends StatelessWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        title: Text(StringConstants.dashboard),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _handleLogout(context),
-          ),
-        ],
-      ),
-      body: BlocBuilder<DashboardBloc, DashboardState>(
-        builder: (context, state) {
-          if (state is DashboardLoadingState) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is DashboardErrorState) {
-            return Center(child: Text(state.message));
-          } else if (state is DashboardLoadedState) {
-            return SafeArea(
+  Widget _buildCurrentView() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildHomeView();
+      case 1:
+        return _buildTestView();
+      case 2:
+        return _buildBookingView();
+      case 3:
+        return _buildChatView();
+      case 4:
+        return _buildProfileView();
+      default:
+        return _buildHomeView();
+    }
+  }
+
+  Widget _buildHomeView() {
+    return BlocBuilder<DashboardBloc, DashboardState>(
+      builder: (context, state) {
+        if (state is DashboardLoadingState) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (state is DashboardErrorState) {
+          return Center(child: Text(state.message));
+        } else if (state is DashboardLoadedState) {
+          return Container(
+            color: Colors.grey[50],
+            child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Welcome back, ${state.userProfile.fullName}!',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.8),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
                           ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome back,',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            state.userProfile.fullName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 32),
-                    _buildDashboardCard(
-                      context,
-                      title: '1. Complete/Update Profile',
-                      icon: Icons.person_outline,
-                      onTap: () {
-                        Navigator.pushNamed(context, '/profile');
-                      },
+                    const Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     _buildDashboardCard(
                       context,
-                      title: '2. Complete Tests',
-                      icon: Icons.bar_chart,
+                      title: 'Complete Tests',
+                      subtitle: 'Take assessment tests to evaluate your skills',
+                      icon: Icons.quiz_outlined,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -101,8 +161,9 @@ class DashboardView extends StatelessWidget {
                     const SizedBox(height: 16),
                     _buildDashboardCard(
                       context,
-                      title: '3. Download Report',
-                      icon: Icons.cloud_download_outlined,
+                      title: 'Download Report',
+                      subtitle: 'View and download your performance reports',
+                      icon: Icons.analytics_outlined,
                       onTap: () {
                         // TODO: Implement report download
                       },
@@ -110,10 +171,172 @@ class DashboardView extends StatelessWidget {
                   ],
                 ),
               ),
-            );
-          }
-          return const SizedBox.shrink();
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildTestView() {
+    return BlocProvider(
+      create: (context) => QuizBloc(),
+      child: const QuizListScreen(),
+    );
+  }
+
+  Widget _buildBookingView() {
+    return const Center(child: Text('Booking Screen - Coming Soon'));
+  }
+
+  Widget _buildChatView() {
+    return FutureBuilder<SharedPreferences>(
+      future: SharedPreferences.getInstance(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return BlocProvider(
+            create: (context) => ChatBloc(
+              snapshot.data!,
+              context.read<ChatRepository>(),
+            ),
+            child: const ChatScreen(),
+          );
+        }
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+  }
+
+  Widget _buildProfileView() {
+    return BlocBuilder<DashboardBloc, DashboardState>(
+      builder: (context, state) {
+        if (state is DashboardLoadingState) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (state is DashboardErrorState) {
+          return Center(child: Text(state.message));
+        } else if (state is DashboardLoadedState) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        child: Text(
+                          state.userProfile.fullName[0].toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 36,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        state.userProfile.fullName,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        state.userProfile.email,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                _buildDashboardCard(
+                  context,
+                  title: 'Complete/Update Profile',
+                  subtitle: 'Update your profile information',
+                  icon: Icons.person_outline,
+                  onTap: () {
+                    Navigator.pushNamed(context, '/profile');
+                  },
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(Icons.school_outlined),
+                  title: const Text('School'),
+                  subtitle: Text(state.userProfile.schoolName),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.grade_outlined),
+                  title: const Text('Standard'),
+                  subtitle: Text('${state.userProfile.standard}'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.language_outlined),
+                  title: const Text('Medium'),
+                  subtitle: Text(state.userProfile.medium),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.phone_outlined),
+                  title: const Text('Mobile'),
+                  subtitle: Text(state.userProfile.mobileNumber),
+                ),
+              ],
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.background,
+      appBar: AppBar(
+        title: Text(StringConstants.dashboard),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _handleLogout(context),
+          ),
+        ],
+      ),
+      body: _buildCurrentView(),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (int index) {
+          setState(() {
+            _selectedIndex = index;
+          });
         },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.quiz_outlined),
+            selectedIcon: Icon(Icons.quiz),
+            label: 'Test',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_today_outlined),
+            selectedIcon: Icon(Icons.calendar_today),
+            label: 'Booking',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_outlined),
+            selectedIcon: Icon(Icons.chat),
+            label: 'Chat',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
@@ -121,35 +344,64 @@ class DashboardView extends StatelessWidget {
   Widget _buildDashboardCard(
     BuildContext context, {
     required String title,
+    required String subtitle,
     required IconData icon,
     required VoidCallback onTap,
   }) {
     return Card(
-      elevation: 2,
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Colors.grey.withOpacity(0.2),
+        ),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          width: double.infinity,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
             children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  size: 24,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Icon(
-                icon,
-                size: 48,
-                color: Colors.grey[600],
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.grey[400],
               ),
             ],
           ),
