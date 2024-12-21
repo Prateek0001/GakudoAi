@@ -6,6 +6,7 @@ import '../bloc/chat_state.dart';
 import '../constants/app_constants.dart';
 import '../constants/string_constants.dart';
 import '../models/chat_message.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
@@ -60,7 +61,9 @@ class ChatHistoryDrawer extends StatelessWidget {
 
             return Column(
               children: [
-                DrawerHeader(
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -71,27 +74,44 @@ class ChatHistoryDrawer extends StatelessWidget {
                       end: Alignment.bottomRight,
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Chat History',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Conversations',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                context.read<ChatBloc>().add(NewChatEvent());
+                                Navigator.pop(context);
+                              },
+                              icon: const Icon(Icons.add, color: Colors.white),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.white.withOpacity(0.2),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${conversations.length} conversations',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14,
+                        const SizedBox(height: 8),
+                        Text(
+                          '${conversations.length} ${conversations.length == 1 ? 'conversation' : 'conversations'}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 if (conversations.isEmpty)
@@ -100,10 +120,20 @@ class ChatHistoryDrawer extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.chat_bubble_outline,
-                            size: 48,
-                            color: Colors.grey[400],
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.chat_bubble_outline,
+                              size: 32,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -113,6 +143,14 @@ class ChatHistoryDrawer extends StatelessWidget {
                               fontSize: 16,
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Start a new chat to begin',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 14,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -120,114 +158,126 @@ class ChatHistoryDrawer extends StatelessWidget {
                 else
                   Expanded(
                     child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       itemCount: conversations.entries.length,
                       itemBuilder: (context, index) {
                         final entry = conversations.entries.elementAt(index);
                         final messages = entry.value;
-
-                        // Skip empty conversations
                         if (messages.isEmpty) return const SizedBox.shrink();
 
                         final firstMessage = messages.first;
-                        return Dismissible(
-                          key: Key(entry.key),
-                          background: Container(
-                            color: Colors.red,
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 16),
-                            child:
-                                const Icon(Icons.delete, color: Colors.white),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
                           ),
-                          direction: DismissDirection.endToStart,
-                          onDismissed: (direction) {
-                            context.read<ChatBloc>().add(
-                                  DeleteConversationEvent(entry.key),
-                                );
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                          child: Dismissible(
+                            key: Key(entry.key),
+                            background: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              child: Icon(
+                                Icons.delete_outline,
+                                color: Colors.red.shade700,
+                              ),
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 3,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                            child: ListTile(
-                              title: Text(
-                                entry.key,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
+                            direction: DismissDirection.endToStart,
+                            onDismissed: (direction) {
+                              context.read<ChatBloc>().add(
+                                    DeleteConversationEvent(entry.key),
+                                  );
+                            },
+                            child: Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(
+                                  color: Colors.grey.withOpacity(0.2),
                                 ),
                               ),
-                              subtitle: messages.isNotEmpty
-                                  ? Text(
-                                      firstMessage.content,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                                  : const Text('Empty conversation'),
-                              leading: CircleAvatar(
-                                backgroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.1),
-                                child: Icon(
-                                  Icons.chat_outlined,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () {
-                                  context.read<ChatBloc>().add(
-                                        DeleteConversationEvent(entry.key),
-                                      );
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () {
+                                  context
+                                      .read<ChatBloc>()
+                                      .add(LoadConversationEvent(entry.key));
+                                  Navigator.pop(context);
                                 },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          Icons.chat_outlined,
+                                          size: 20,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              entry.key,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 15,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              firstMessage.content,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.close,
+                                          size: 18,
+                                          color: Colors.grey[400],
+                                        ),
+                                        onPressed: () {
+                                          context.read<ChatBloc>().add(
+                                                DeleteConversationEvent(
+                                                    entry.key),
+                                              );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                              onTap: () {
-                                context
-                                    .read<ChatBloc>()
-                                    .add(LoadConversationEvent(entry.key));
-                                Navigator.pop(context);
-                              },
                             ),
                           ),
                         );
                       },
                     ),
                   ),
-                const Divider(),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      context.read<ChatBloc>().add(NewChatEvent());
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: const Icon(Icons.add),
-                    label: const Text('New Chat'),
-                  ),
-                ),
               ],
             );
           }
@@ -248,12 +298,38 @@ class ChatView extends StatefulWidget {
 class _ChatViewState extends State<ChatView> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  final _speechToText = stt.SpeechToText();
+  bool _isListening = false;
 
   @override
-  void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    await _speechToText.initialize();
+    setState(() {});
+  }
+
+  Future<void> _startListening() async {
+    await _speechToText.listen(
+      onResult: (result) {
+        setState(() {
+          _messageController.text = result.recognizedWords;
+        });
+      },
+    );
+    setState(() {
+      _isListening = true;
+    });
+  }
+
+  Future<void> _stopListening() async {
+    await _speechToText.stop();
+    setState(() {
+      _isListening = false;
+    });
   }
 
   void _sendMessage(String message) {
@@ -362,6 +438,18 @@ class _ChatViewState extends State<ChatView> {
                             horizontal: 20,
                             vertical: 10,
                           ),
+                          suffixIcon: IconButton(
+                            onPressed:
+                                _speechToText.isAvailable && !_isListening
+                                    ? _startListening
+                                    : _stopListening,
+                            icon: Icon(
+                              _isListening ? Icons.mic : Icons.mic_none,
+                              color: _isListening
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Colors.grey,
+                            ),
+                          ),
                         ),
                         maxLines: null,
                         textInputAction: TextInputAction.send,
@@ -388,6 +476,14 @@ class _ChatViewState extends State<ChatView> {
         return const Center(child: CircularProgressIndicator());
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    _speechToText.cancel();
+    super.dispose();
   }
 }
 
