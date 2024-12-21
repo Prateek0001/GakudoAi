@@ -12,15 +12,30 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final SharedPreferences prefs;
   final ChatRepository chatRepository;
   List<ChatMessage> messages = [];
-  List<ChatMessage> allMessages = [];
+  Map<String, List<ChatMessage>> conversations = {};
+  String currentConversationId = '';
+  int conversationCounter = 1;
 
   ChatBloc(this.prefs, this.chatRepository) : super(ChatInitial()) {
     on<SendMessageEvent>(_onSendMessage);
     on<LoadChatHistoryEvent>(_onLoadChatHistory);
     on<NewChatEvent>(_onNewChat);
     on<LoadConversationEvent>(_onLoadConversation);
+    on<DeleteConversationEvent>(_onDeleteConversation);
 
-    add(LoadChatHistoryEvent());
+    // Create initial conversation and emit initial state
+    _createNewConversation();
+    emit(ChatLoaded(
+      messages: messages,
+      conversations: conversations,
+    ));
+  }
+
+  void _createNewConversation() {
+    currentConversationId = 'Conversation $conversationCounter';
+    messages = [];
+    conversations[currentConversationId] = messages;
+    conversationCounter++;
   }
 
   Future<void> _onSendMessage(
@@ -34,8 +49,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         role: MessageRole.user,
       );
       messages = [...messages, userMessage];
-      allMessages = [...allMessages, userMessage];
-      emit(ChatLoaded(messages: messages, isTyping: true));
+      conversations[currentConversationId] = messages;
+
+      emit(ChatLoaded(
+        messages: messages,
+        isTyping: true,
+        conversations: conversations,
+      ));
 
       // Get token and username from SharedPreferences
       final token = prefs.getString(StorageConstants.authToken);
@@ -59,15 +79,17 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           role: MessageRole.assistant,
         );
         messages = [...messages, aiMessage];
-        allMessages = [...allMessages, aiMessage];
+        conversations[currentConversationId] = messages;
 
-        // Save to local storage before emitting new state
-        await _saveChatHistory();
-
-        emit(ChatLoaded(messages: messages));
+        emit(ChatLoaded(
+          messages: messages,
+          conversations: conversations,
+        ));
       } catch (e) {
-        // If API call fails, show error but keep user message
-        emit(ChatLoaded(messages: messages));
+        emit(ChatLoaded(
+          messages: messages,
+          conversations: conversations,
+        ));
         emit(ChatError('Failed to get response: ${e.toString()}'));
       }
     } catch (e) {
@@ -79,47 +101,46 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     LoadChatHistoryEvent event,
     Emitter<ChatState> emit,
   ) async {
-    try {
-      emit(ChatLoading());
-      final chatHistory = prefs.getStringList(StorageConstants.chatHistory);
-      if (chatHistory != null) {
-        allMessages = chatHistory
-            .map((msg) => ChatMessage.fromMap(json.decode(msg)))
-            .toList();
-        messages = allMessages;
-      }
-      emit(ChatLoaded(messages: messages));
-    } catch (e) {
-      emit(ChatError(e.toString()));
-    }
+    emit(ChatLoaded(
+      messages: messages,
+      conversations: conversations,
+    ));
   }
 
   void _onNewChat(NewChatEvent event, Emitter<ChatState> emit) {
-    messages = [];
-    emit(ChatLoaded(messages: messages));
+    _createNewConversation();
+    emit(ChatLoaded(
+      messages: messages,
+      conversations: conversations,
+    ));
   }
 
-  void _onLoadConversation(
+  Future<void> _onDeleteConversation(
+    DeleteConversationEvent event,
+    Emitter<ChatState> emit,
+  ) async {
+    conversations.remove(event.conversationId);
+
+    // If current conversation is deleted, create a new one
+    if (event.conversationId == currentConversationId) {
+      _createNewConversation();
+    }
+
+    emit(ChatLoaded(
+      messages: messages,
+      conversations: conversations,
+    ));
+  }
+
+  Future<void> _onLoadConversation(
     LoadConversationEvent event,
     Emitter<ChatState> emit,
-  ) {
-    final conversation = allMessages.where((message) {
-      final timeDiff = message.timestamp
-          .difference(allMessages
-              .firstWhere((m) => m.id == event.conversationId)
-              .timestamp)
-          .inMinutes
-          .abs();
-      return timeDiff <= 30;
-    }).toList();
-
-    messages = conversation;
-    emit(ChatLoaded(messages: messages));
-  }
-
-  Future<void> _saveChatHistory() async {
-    final chatHistory =
-        allMessages.map((msg) => json.encode(msg.toMap())).toList();
-    await prefs.setStringList(StorageConstants.chatHistory, chatHistory);
+  ) async {
+    currentConversationId = event.conversationId;
+    messages = conversations[event.conversationId] ?? [];
+    emit(ChatLoaded(
+      messages: messages,
+      conversations: conversations,
+    ));
   }
 }

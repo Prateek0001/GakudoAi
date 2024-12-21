@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-
 abstract class ChatEvent extends Equatable {
   const ChatEvent();
 
@@ -28,4 +27,13 @@ class LoadConversationEvent extends ChatEvent {
 
   @override
   List<Object?> get props => [conversationId];
-} 
+}
+
+class DeleteConversationEvent extends ChatEvent {
+  final String conversationId;
+
+  const DeleteConversationEvent(this.conversationId);
+
+  @override
+  List<Object> get props => [conversationId];
+}

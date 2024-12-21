@@ -56,7 +56,7 @@ class ChatHistoryDrawer extends StatelessWidget {
           }
 
           if (state is ChatLoaded) {
-            final conversations = _groupConversations(state.messages);
+            final conversations = state.conversations;
 
             return Column(
               children: [
@@ -124,62 +124,82 @@ class ChatHistoryDrawer extends StatelessWidget {
                       itemCount: conversations.entries.length,
                       itemBuilder: (context, index) {
                         final entry = conversations.entries.elementAt(index);
-                        final firstMessage = entry.value.first;
-                        return Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                        final messages = entry.value;
+
+                        // Skip empty conversations
+                        if (messages.isEmpty) return const SizedBox.shrink();
+
+                        final firstMessage = messages.first;
+                        return Dismissible(
+                          key: Key(entry.key),
+                          background: Container(
+                            color: Colors.red,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 16),
+                            child:
+                                const Icon(Icons.delete, color: Colors.white),
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 3,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
+                          direction: DismissDirection.endToStart,
+                          onDismissed: (direction) {
+                            context.read<ChatBloc>().add(
+                                  DeleteConversationEvent(entry.key),
+                                );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
                             ),
-                            title: Text(
-                              firstMessage.content.length > 30
-                                  ? '${firstMessage.content.substring(0, 30)}...'
-                                  : firstMessage.content,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 3,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                _formatDate(firstMessage.timestamp),
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
+                            child: ListTile(
+                              title: Text(
+                                entry.key,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-                            leading: CircleAvatar(
-                              backgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.1),
-                              child: Icon(
-                                Icons.chat_outlined,
-                                color: Theme.of(context).colorScheme.primary,
+                              subtitle: messages.isNotEmpty
+                                  ? Text(
+                                      firstMessage.content,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    )
+                                  : const Text('Empty conversation'),
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.1),
+                                child: Icon(
+                                  Icons.chat_outlined,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                               ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.close),
+                                onPressed: () {
+                                  context.read<ChatBloc>().add(
+                                        DeleteConversationEvent(entry.key),
+                                      );
+                                },
+                              ),
+                              onTap: () {
+                                context
+                                    .read<ChatBloc>()
+                                    .add(LoadConversationEvent(entry.key));
+                                Navigator.pop(context);
+                              },
                             ),
-                            onTap: () {
-                              context
-                                  .read<ChatBloc>()
-                                  .add(LoadConversationEvent(entry.key));
-                              Navigator.pop(context);
-                            },
                           ),
                         );
                       },
@@ -215,49 +235,6 @@ class ChatHistoryDrawer extends StatelessWidget {
         },
       ),
     );
-  }
-
-  Map<String, List<ChatMessage>> _groupConversations(
-      List<ChatMessage> messages) {
-    final conversations = <String, List<ChatMessage>>{};
-    String currentConversationId = '';
-    List<ChatMessage> currentConversation = [];
-
-    for (final message in messages) {
-      if (currentConversation.isEmpty) {
-        currentConversationId = message.id;
-        currentConversation = [message];
-      } else if (_isPartOfSameConversation(currentConversation.last, message)) {
-        currentConversation.add(message);
-      } else {
-        conversations[currentConversationId] = List.from(currentConversation);
-        currentConversationId = message.id;
-        currentConversation = [message];
-      }
-    }
-
-    if (currentConversation.isNotEmpty) {
-      conversations[currentConversationId] = List.from(currentConversation);
-    }
-
-    return conversations;
-  }
-
-  bool _isPartOfSameConversation(ChatMessage last, ChatMessage current) {
-    return current.timestamp.difference(last.timestamp).inMinutes.abs() <= 30;
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return '${StringConstants.today} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } else if (difference.inDays == 1) {
-      return '${StringConstants.yesterday} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
   }
 }
 
