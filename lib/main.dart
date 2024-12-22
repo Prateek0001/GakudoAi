@@ -17,6 +17,7 @@ import 'repositories/auth/auth_repository.dart';
 import 'repositories/auth/auth_repository_impl.dart';
 import 'repositories/chat/chat_repository.dart';
 import 'repositories/chat/chat_repository_impl.dart';
+import 'bloc/quiz_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,11 +33,16 @@ void main() async {
           create: (context) => ChatRepositoryImpl(),
         ),
       ],
-      child: ChangeNotifierProvider(
-        create: (_) => ThemeProvider(prefs),
-        child: ScreenUtilInit(
-          designSize: const Size(390, 844),
-          builder: (context, child) => MyApp(prefs),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (context) => QuizBloc()),
+        ],
+        child: ChangeNotifierProvider(
+          create: (_) => ThemeProvider(prefs),
+          child: ScreenUtilInit(
+            designSize: const Size(390, 844),
+            builder: (context, child) => MyApp(prefs),
+          ),
         ),
       ),
     ),
