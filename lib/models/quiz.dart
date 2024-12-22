@@ -1,37 +1,37 @@
 class Quiz {
   final String id;
-  final String title;
   final List<Question> questions;
-  final bool isCompleted;
 
   Quiz({
     required this.id,
-    required this.title,
     required this.questions,
-    this.isCompleted = false,
   });
+
+  factory Quiz.fromJson(Map<String, dynamic> json) {
+    return Quiz(
+      id: json['id'],
+      questions:
+          (json['questions'] as List).map((q) => Question.fromJson(q)).toList(),
+    );
+  }
 }
 
 class Question {
   final String id;
-  final String text;
-  final List<Option> options;
-  final String correctOptionId;
+  final String question;
+  final List<String> options;
 
   Question({
     required this.id,
-    required this.text,
+    required this.question,
     required this.options,
-    required this.correctOptionId,
   });
+
+  factory Question.fromJson(Map<String, dynamic> json) {
+    return Question(
+      id: json['id'],
+      question: json['question'],
+      options: (json['options'] as List).map((e) => e.toString()).toList(),
+    );
+  }
 }
-
-class Option {
-  final String id;
-  final String text;
-
-  Option({
-    required this.id,
-    required this.text,
-  });
-} 

@@ -20,4 +20,6 @@ class QuizErrorState extends QuizState {
   final String message;
 
   QuizErrorState(this.message);
-} 
+}
+
+class QuizSubmittedState extends QuizState {}

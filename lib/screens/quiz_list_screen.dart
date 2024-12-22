@@ -118,7 +118,7 @@ class QuizListScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => QuizScreen(quizId: 'quiz$number'),
+                    builder: (context) => QuizScreen(quizId: '$number'),
                   ),
                 );
               },
