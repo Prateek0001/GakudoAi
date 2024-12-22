@@ -11,11 +11,21 @@ import '../constants/api_constants.dart';
 import '../constants/storage_constants.dart';
 
 class QuizBloc extends Bloc<QuizEvent, QuizState> {
+  List<String> completedQuizzes = [];
+
   final _prefs = SharedPreferences.getInstance();
 
   QuizBloc() : super(QuizInitial()) {
     on<LoadQuizEvent>(_onLoadQuiz);
     on<SubmitQuizEvent>(_onSubmitQuiz);
+    on<GenerateReportEvent>(_onGenerateReport);
+    on<DownloadReportEvent>(_onDownloadReport);
+    _loadCompletedQuizzes();
+  }
+
+  Future<void> _loadCompletedQuizzes() async {
+    final prefs = await SharedPreferences.getInstance();
+    completedQuizzes = prefs.getStringList('completed_quizzes') ?? [];
   }
 
   Future<void> _onLoadQuiz(LoadQuizEvent event, Emitter<QuizState> emit) async {
@@ -34,9 +44,6 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final quiz = Quiz.fromJson(data);
-
-        final prefs = await SharedPreferences.getInstance();
-        final completedQuizzes = prefs.getStringList('completed_quizzes') ?? [];
 
         emit(QuizLoadedState(
           quiz: quiz,
@@ -85,14 +92,18 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
       );
 
       if (response.statusCode == 200) {
-        // Save completed quiz locally
-        final prefs = await SharedPreferences.getInstance();
-        final completedQuizzes = prefs.getStringList('completed_quizzes') ?? [];
+        // Update completed quizzes
         if (!completedQuizzes.contains(event.quizId)) {
           completedQuizzes.add(event.quizId);
+          final prefs = await SharedPreferences.getInstance();
           await prefs.setStringList('completed_quizzes', completedQuizzes);
         }
 
+        // Emit new state with updated completed quizzes
+        emit(QuizLoadedState(
+          quiz: (state as QuizLoadedState).quiz,
+          completedQuizzes: completedQuizzes,
+        ));
         emit(QuizSubmittedState());
       } else {
         throw Exception('Failed to submit quiz');
@@ -109,5 +120,58 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
       return UserProfile.fromJson(jsonDecode(userProfileJson));
     }
     return null;
+  }
+
+  Future<void> _onGenerateReport(
+      GenerateReportEvent event, Emitter<QuizState> emit) async {
+    try {
+      emit(QuizLoadingState());
+      final token = await _getAuthToken();
+
+      final response = await http.post(
+        Uri.parse(
+            '${ApiConstants.baseUrl}/api/v1/generate-report/?user_id=${event.userId}'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': token,
+        },
+        body: '{}',
+      );
+
+      if (response.statusCode == 200) {
+        emit(ReportGeneratedState());
+      } else {
+        throw Exception('Failed to generate report');
+      }
+    } catch (e) {
+      emit(QuizErrorState(e.toString()));
+    }
+  }
+
+  Future<void> _onDownloadReport(
+      DownloadReportEvent event, Emitter<QuizState> emit) async {
+    try {
+      emit(QuizLoadingState());
+      final token = await _getAuthToken();
+
+      final response = await http.get(
+        Uri.parse(
+            '${ApiConstants.baseUrl}/api/v1/report-download-link/?user_id=${event.userId}'),
+        headers: {
+          'Accept': 'application/json',
+          'api-key': token,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        emit(ReportDownloadLinkReceivedState(data['download_link']));
+      } else {
+        throw Exception('Failed to get download link');
+      }
+    } catch (e) {
+      emit(QuizErrorState(e.toString()));
+    }
   }
 }

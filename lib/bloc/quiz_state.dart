@@ -1,6 +1,8 @@
 import '../models/quiz.dart';
 
-abstract class QuizState {}
+abstract class QuizState {
+  const QuizState();
+}
 
 class QuizInitial extends QuizState {}
 
@@ -23,3 +25,10 @@ class QuizErrorState extends QuizState {
 }
 
 class QuizSubmittedState extends QuizState {}
+
+class ReportGeneratedState extends QuizState {}
+
+class ReportDownloadLinkReceivedState extends QuizState {
+  final String downloadLink;
+  const ReportDownloadLinkReceivedState(this.downloadLink);
+}

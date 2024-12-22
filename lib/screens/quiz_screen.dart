@@ -47,6 +47,7 @@ class _QuizViewState extends State<_QuizView> {
               const SnackBar(content: Text('Quiz submitted successfully')),
             );
             Navigator.pop(context);
+            context.read<QuizBloc>().add(LoadQuizEvent('1'));
           }
         },
         builder: (context, state) {
