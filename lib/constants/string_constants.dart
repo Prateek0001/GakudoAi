@@ -158,7 +158,7 @@ class StringConstants {
   // Dashboard
   static const String dashboard = 'Dashboard';
   static const String welcome = 'Welcome!';
-  static const String aiChat = 'AI Chat';
+  static const String aiChat = 'GakudoAI Assistant';
   static const String chatWithAi = 'Chat with our AI assistant';
   static const String bookExpertSession = 'Book Expert Session';
   static const String connectWithExperts = 'Connect with our experts';

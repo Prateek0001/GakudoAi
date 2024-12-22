@@ -85,6 +85,7 @@ class _DashboardViewState extends State<DashboardView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
+                      width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -294,7 +295,7 @@ class _DashboardViewState extends State<DashboardView> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        title: Text(StringConstants.dashboard),
+        title: Text("GakudoAI"),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

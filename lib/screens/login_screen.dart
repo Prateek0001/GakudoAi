@@ -88,7 +88,7 @@ class _LoginViewState extends State<LoginView> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'LETS SPARK',
+                          'AI-Enable Career Guide',
                           style: TextStyle(
                             fontSize: 20,
                             color: Colors.white.withOpacity(0.9),
