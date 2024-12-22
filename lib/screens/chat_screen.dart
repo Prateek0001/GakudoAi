@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
 import '../bloc/chat_state.dart';
@@ -522,11 +523,13 @@ class ChatBubble extends StatelessWidget {
             ),
           ],
         ),
-        child: Text(
-          message,
-          style: TextStyle(
-            color: isUser ? Colors.white : Colors.black87,
-            fontSize: 16,
+        child: MarkdownBody(
+          data: message,
+          styleSheet: MarkdownStyleSheet(
+            p: TextStyle(
+              color: isUser ? Colors.white : Colors.black87,
+              fontSize: 16,
+            ),
           ),
         ),
       ),
