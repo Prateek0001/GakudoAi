@@ -114,11 +114,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         final data = jsonDecode(response.body);
         emit(BookingCreatedState(data['id']));
 
-        // Refresh booking list after creation
-        final userProfile = await UserService.getCurrentUser();
-        if (userProfile != null) {
-          add(FetchBookingsEvent(userProfile.username));
-        }
+        // Immediately fetch updated booking list
+        add(FetchBookingsEvent(event.username));
       } else {
         throw Exception('Failed to create booking');
       }
