@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rx_logix/repositories/chat/chat_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../constants/string_constants.dart';
 import '../screens/quiz_list_screen.dart';
 import '../screens/chat_screen.dart';
 import '../bloc/quiz_bloc.dart';
@@ -12,6 +11,9 @@ import '../bloc/dashboard_event.dart';
 import '../bloc/dashboard_state.dart';
 import '../services/user_service.dart';
 import '../repositories/auth/auth_repository.dart';
+import '../bloc/booking_bloc.dart';
+import '../bloc/booking_event.dart';
+import '../bloc/booking_state.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -188,7 +190,102 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   Widget _buildBookingView() {
-    return const Center(child: Text('Booking Screen - Coming Soon'));
+    return BlocProvider(
+      create: (context) => BookingBloc(),
+      child: BlocBuilder<BookingBloc, BookingState>(
+        builder: (context, state) {
+          if (state is BookingInitial) {
+            // Fetch bookings when view is loaded
+            context.read<BookingBloc>().add(
+                  FetchBookingsEvent(
+                    context.read<DashboardBloc>().state is DashboardLoadedState
+                        ? (context.read<DashboardBloc>().state
+                                as DashboardLoadedState)
+                            .userProfile
+                            .username
+                        : '',
+                  ),
+                );
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state is BookingLoadingState) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state is BookingsLoadedState) {
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: state.bookings.length,
+              itemBuilder: (context, index) {
+                final booking = state.bookings[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    title: Text(
+                      booking.remark,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today, size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              booking.dateTime.toString().split('.')[0],
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: booking.status == 'In Progress'
+                                ? Colors.blue.withOpacity(0.1)
+                                : Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            booking.status,
+                            style: TextStyle(
+                              color: booking.status == 'In Progress'
+                                  ? Colors.blue
+                                  : Colors.green,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          }
+
+          if (state is BookingErrorState) {
+            return Center(child: Text(state.message));
+          }
+
+          return const SizedBox();
+        },
+      ),
+    );
   }
 
   Widget _buildChatView() {

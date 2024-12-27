@@ -1,44 +1,53 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:rx_logix/bloc/booking_event.dart';
+import 'package:rx_logix/bloc/booking_state.dart';
+import 'package:rx_logix/services/user_service.dart';
 import 'dart:convert';
-import 'package:uuid/uuid.dart';
-import 'booking_event.dart';
-import 'booking_state.dart';
 import '../models/booking.dart';
+import '../constants/api_constants.dart';
+import '../constants/storage_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BookingBloc extends Bloc<BookingEvent, BookingState> {
   BookingBloc() : super(BookingInitial()) {
-    on<CreateBookingEvent>(_onCreateBooking);
+    on<FetchBookingsEvent>(_onFetchBookings);
     on<LoadBookingsEvent>(_onLoadBookings);
+    on<CreateBookingEvent>(_onCreateBooking);
     on<CancelBookingEvent>(_onCancelBooking);
     on<RescheduleBookingEvent>(_onRescheduleBooking);
   }
 
-  Future<void> _onCreateBooking(
-    CreateBookingEvent event,
+  Future<void> _onFetchBookings(
+    FetchBookingsEvent event,
     Emitter<BookingState> emit,
   ) async {
     try {
       emit(BookingLoadingState());
 
-      final booking = Booking(
-        id: const Uuid().v4(),
-        expertId: event.expertId,
-        userId: 'current_user_id', // Replace with actual user ID
-        sessionDate: event.sessionDate,
-        timeSlot: event.timeSlot,
-        amount: event.amount,
-        status: 'confirmed',
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(StorageConstants.authToken);
+
+      if (token == null) throw Exception('Not authenticated');
+
+      final response = await http.get(
+        Uri.parse(
+            '${ApiConstants.baseUrl}/api/v1/fetch-booking/?username=${event.username}'),
+        headers: {
+          'accept': 'application/json',
+          'api-key': token,
+        },
       );
 
-      // Save booking to SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final bookingsJson = prefs.getStringList('bookings') ?? [];
-      bookingsJson.add(json.encode(booking.toMap()));
-      await prefs.setStringList('bookings', bookingsJson);
-
-      emit(BookingSuccessState(booking));
-      add(LoadBookingsEvent()); // Reload the bookings list
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final bookings = (data['booking_list'] as List)
+            .map((booking) => Booking.fromJson(booking))
+            .toList();
+        emit(BookingsLoadedState(bookings));
+      } else {
+        throw Exception('Failed to fetch bookings');
+      }
     } catch (e) {
       emit(BookingErrorState(e.toString()));
     }
@@ -50,18 +59,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   ) async {
     try {
       emit(BookingLoadingState());
-
-      final prefs = await SharedPreferences.getInstance();
-      final bookingsJson = prefs.getStringList('bookings') ?? [];
-      
-      final bookings = bookingsJson
-          .map((jsonStr) => Booking.fromMap(json.decode(jsonStr)))
-          .toList();
-      
-      // Sort bookings by date, most recent first
-      bookings.sort((a, b) => b.sessionDate.compareTo(a.sessionDate));
-
-      emit(BookingsLoadedState(bookings));
+      final userProfile = await UserService.getCurrentUser();
+      if (userProfile != null) {
+        add(FetchBookingsEvent(userProfile.username));
+      } else {
+        throw Exception('User not found');
+      }
     } catch (e) {
       emit(BookingErrorState(e.toString()));
     }
@@ -71,83 +74,56 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     CancelBookingEvent event,
     Emitter<BookingState> emit,
   ) async {
-    try {
-      emit(BookingLoadingState());
-
-      final prefs = await SharedPreferences.getInstance();
-      final bookingsJson = prefs.getStringList('bookings') ?? [];
-      
-      final bookings = bookingsJson
-          .map((jsonStr) => Booking.fromMap(json.decode(jsonStr)))
-          .toList();
-
-      // Find and update the booking status
-      final updatedBookings = bookings.map((booking) {
-        if (booking.id == event.bookingId) {
-          return Booking(
-            id: booking.id,
-            expertId: booking.expertId,
-            userId: booking.userId,
-            sessionDate: booking.sessionDate,
-            timeSlot: booking.timeSlot,
-            amount: booking.amount,
-            status: 'cancelled',
-            createdAt: booking.createdAt,
-          );
-        }
-        return booking;
-      }).toList();
-
-      // Save updated bookings
-      final updatedBookingsJson = 
-          updatedBookings.map((booking) => json.encode(booking.toMap())).toList();
-      await prefs.setStringList('bookings', updatedBookingsJson);
-
-      emit(BookingsLoadedState(updatedBookings));
-    } catch (e) {
-      emit(BookingErrorState(e.toString()));
-    }
+    // TODO: Implement cancel booking
   }
 
   Future<void> _onRescheduleBooking(
     RescheduleBookingEvent event,
     Emitter<BookingState> emit,
   ) async {
+    // TODO: Implement reschedule booking
+  }
+
+  Future<void> _onCreateBooking(
+    CreateBookingEvent event,
+    Emitter<BookingState> emit,
+  ) async {
     try {
       emit(BookingLoadingState());
 
       final prefs = await SharedPreferences.getInstance();
-      final bookingsJson = prefs.getStringList('bookings') ?? [];
-      
-      final bookings = bookingsJson
-          .map((jsonStr) => Booking.fromMap(json.decode(jsonStr)))
-          .toList();
+      final token = prefs.getString(StorageConstants.authToken);
 
-      // Find and update the booking
-      final updatedBookings = bookings.map((booking) {
-        if (booking.id == event.bookingId) {
-          return Booking(
-            id: booking.id,
-            expertId: booking.expertId,
-            userId: booking.userId,
-            sessionDate: event.newDate,
-            timeSlot: event.newTimeSlot,
-            amount: booking.amount,
-            status: 'confirmed',
-            createdAt: booking.createdAt,
-          );
+      if (token == null) throw Exception('Not authenticated');
+
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/api/v1/booking/'),
+        headers: {
+          'accept': 'application/json',
+          'api-key': token,
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'username': event.username,
+          'dateTime': event.dateTime.toUtc().toIso8601String(),
+          'remark': event.remark,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        emit(BookingCreatedState(data['id']));
+
+        // Refresh booking list after creation
+        final userProfile = await UserService.getCurrentUser();
+        if (userProfile != null) {
+          add(FetchBookingsEvent(userProfile.username));
         }
-        return booking;
-      }).toList();
-
-      // Save updated bookings
-      final updatedBookingsJson = 
-          updatedBookings.map((booking) => json.encode(booking.toMap())).toList();
-      await prefs.setStringList('bookings', updatedBookingsJson);
-
-      emit(BookingsLoadedState(updatedBookings));
+      } else {
+        throw Exception('Failed to create booking');
+      }
     } catch (e) {
       emit(BookingErrorState(e.toString()));
     }
   }
-} 
+}

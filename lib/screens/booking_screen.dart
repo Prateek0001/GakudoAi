@@ -1,39 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
-import '../models/expert.dart';
 import '../bloc/booking_bloc.dart';
 import '../bloc/booking_event.dart';
 import '../bloc/booking_state.dart';
-import '../constants/string_constants.dart';
-import '../constants/app_constants.dart';
+import '../services/user_service.dart';
 
 class BookingScreen extends StatefulWidget {
-  final Expert expert;
-
-  const BookingScreen({super.key, required this.expert});
+  const BookingScreen({super.key});
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
 }
 
 class _BookingScreenState extends State<BookingScreen> {
-  late Razorpay _razorpay;
   DateTime? _selectedDate;
-  String? _selectedTimeSlot;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeRazorpay();
-  }
-
-  void _initializeRazorpay() {
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
-  }
+  TimeOfDay? _selectedTime;
+  final _remarkController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +23,7 @@ class _BookingScreenState extends State<BookingScreen> {
       create: (context) => BookingBloc(),
       child: Scaffold(
         appBar: AppBar(
-          title: Text(StringConstants.bookSession),
+          title: const Text('Book Session'),
         ),
         body: BlocConsumer<BookingBloc, BookingState>(
           listener: (context, state) {
@@ -49,35 +31,41 @@ class _BookingScreenState extends State<BookingScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(state.message)),
               );
-            } else if (state is BookingSuccessState) {
+            } else if (state is BookingCreatedState) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(StringConstants.bookingSuccess)),
+                const SnackBar(content: Text('Booking created successfully')),
               );
               Navigator.pop(context);
             }
           },
           builder: (context, state) {
             return SingleChildScrollView(
-              padding: EdgeInsets.all(AppConstants.spacingM),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildExpertInfo(),
-                  SizedBox(height: AppConstants.spacingL),
                   _buildDatePicker(context),
-                  SizedBox(height: AppConstants.spacingL),
-                  _buildTimeSlots(),
-                  SizedBox(height: AppConstants.spacingL),
-                  _buildPriceInfo(),
-                  SizedBox(height: AppConstants.spacingXL),
+                  const SizedBox(height: 24),
+                  _buildTimePicker(context),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _remarkController,
+                    decoration: const InputDecoration(
+                      labelText: 'Remark',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 32),
                   if (state is BookingLoadingState)
                     const Center(child: CircularProgressIndicator())
                   else
                     SizedBox(
                       width: double.infinity,
-                      child: FilledButton(
-                        onPressed: _canProceed() ? () => _proceedToPayment() : null,
-                        child: Text(StringConstants.proceedToPayment),
+                      child: ElevatedButton(
+                        onPressed:
+                            _canBook() ? () => _createBooking(context) : null,
+                        child: const Text('Book Session'),
                       ),
                     ),
                 ],
@@ -89,26 +77,11 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildExpertInfo() {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: NetworkImage(widget.expert.imageUrl),
-        ),
-        title: Text(widget.expert.name),
-        subtitle: Text(widget.expert.specialization),
-      ),
-    );
-  }
-
   Widget _buildDatePicker(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Select Date',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+        const Text('Select Date'),
         const SizedBox(height: 8),
         InkWell(
           onTap: () => _selectDate(context),
@@ -116,17 +89,15 @@ class _BookingScreenState extends State<BookingScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(4),
             ),
             child: Row(
               children: [
                 const Icon(Icons.calendar_today),
                 const SizedBox(width: 8),
-                Text(
-                  _selectedDate != null
-                      ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
-                      : 'Select a date',
-                ),
+                Text(_selectedDate != null
+                    ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
+                    : 'Pick a date'),
               ],
             ),
           ),
@@ -135,71 +106,32 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildTimeSlots() {
+  Widget _buildTimePicker(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Select Time Slot',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
+        const Text('Select Time'),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: widget.expert.availableSlots.map((slot) {
-            final isSelected = slot == _selectedTimeSlot;
-            return ChoiceChip(
-              label: Text(slot),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedTimeSlot = selected ? slot : null;
-                });
-              },
-            );
-          }).toList(),
+        InkWell(
+          onTap: () => _selectTime(context),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.access_time),
+                const SizedBox(width: 8),
+                Text(_selectedTime != null
+                    ? '${_selectedTime!.hour}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
+                    : 'Pick a time'),
+              ],
+            ),
+          ),
         ),
       ],
-    );
-  }
-
-  Widget _buildPriceInfo() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Price Details',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Session Fee'),
-                Text('₹${widget.expert.pricePerHour}'),
-              ],
-            ),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Total Amount',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '₹${widget.expert.pricePerHour}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -210,63 +142,55 @@ class _BookingScreenState extends State<BookingScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 30)),
     );
-    if (picked != null && picked != _selectedDate) {
+    if (picked != null) {
       setState(() {
         _selectedDate = picked;
       });
     }
   }
 
-  bool _canProceed() {
-    return _selectedDate != null && _selectedTimeSlot != null;
-  }
-
-  void _proceedToPayment() {
-    var options = {
-      'key': AppConstants.razorpayKey,
-      'amount': widget.expert.pricePerHour * 100, // Amount in paise
-      'name': 'Expert Session',
-      'description': 'Session with ${widget.expert.name}',
-      'prefill': {
-        'contact': '1234567890',
-        'email': 'test@example.com'
-      }
-    };
-
-    try {
-      _razorpay.open(options);
-    } catch (e) {
-      debugPrint('Error: $e');
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedTime = picked;
+      });
     }
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    context.read<BookingBloc>().add(
-          CreateBookingEvent(
-            expertId: widget.expert.id,
-            sessionDate: _selectedDate!,
-            timeSlot: _selectedTimeSlot!,
-            amount: widget.expert.pricePerHour,
-            paymentId: response.paymentId!,
-          ),
-        );
+  bool _canBook() {
+    return _selectedDate != null &&
+        _selectedTime != null &&
+        _remarkController.text.isNotEmpty;
   }
 
-  void _handlePaymentError(PaymentFailureResponse response) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Payment failed: ${response.message}')),
-    );
-  }
+  Future<void> _createBooking(BuildContext context) async {
+    final userProfile = await UserService.getCurrentUser();
+    if (userProfile != null && _selectedDate != null && _selectedTime != null) {
+      final dateTime = DateTime(
+        _selectedDate!.year,
+        _selectedDate!.month,
+        _selectedDate!.day,
+        _selectedTime!.hour,
+        _selectedTime!.minute,
+      );
 
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('External wallet selected: ${response.walletName}')),
-    );
+      context.read<BookingBloc>().add(
+            CreateBookingEvent(
+              username: userProfile.username,
+              dateTime: dateTime,
+              remark: _remarkController.text,
+            ),
+          );
+    }
   }
 
   @override
   void dispose() {
-    _razorpay.clear();
+    _remarkController.dispose();
     super.dispose();
   }
-} 
+}

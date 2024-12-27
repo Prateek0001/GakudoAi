@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rx_logix/screens/booking_screen.dart';
 import '../bloc/booking_bloc.dart';
 import '../bloc/booking_event.dart';
 import '../bloc/booking_state.dart';
-import '../models/booking.dart';
 import 'booking_details_screen.dart';
 
 class BookingHistoryScreen extends StatelessWidget {
@@ -35,9 +35,7 @@ class BookingHistoryView extends StatelessWidget {
 
           if (state is BookingsLoadedState) {
             if (state.bookings.isEmpty) {
-              return const Center(
-                child: Text('No bookings found'),
-              );
+              return const Center(child: Text('No bookings found'));
             }
 
             return ListView.builder(
@@ -45,7 +43,27 @@ class BookingHistoryView extends StatelessWidget {
               itemCount: state.bookings.length,
               itemBuilder: (context, index) {
                 final booking = state.bookings[index];
-                return BookingCard(booking: booking);
+                return Card(
+                  child: ListTile(
+                    title: Text(booking.remark),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Date: ${_formatDateTime(booking.dateTime)}'),
+                        Text('Status: ${booking.status}'),
+                      ],
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              BookingDetailsScreen(booking: booking),
+                        ),
+                      );
+                    },
+                  ),
+                );
               },
             );
           }
@@ -57,164 +75,19 @@ class BookingHistoryView extends StatelessWidget {
           return const SizedBox();
         },
       ),
-    );
-  }
-}
-
-class BookingCard extends StatelessWidget {
-  final Booking booking;
-
-  const BookingCard({super.key, required this.booking});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        title: Text('Session on ${_formatDate(booking.sessionDate)}'),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Time: ${booking.timeSlot}'),
-            Text('Status: ${booking.status}'),
-            Text('Amount: ₹${booking.amount}'),
-          ],
-        ),
-        trailing: _buildActionButton(context),
-        onTap: () {
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => BookingDetailsScreen(booking: booking),
-            ),
+            MaterialPageRoute(builder: (context) => const BookingScreen()),
           );
         },
+        child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildActionButton(BuildContext context) {
-    if (booking.status == 'confirmed') {
-      return PopupMenuButton(
-        itemBuilder: (context) => [
-          const PopupMenuItem(
-            value: 'reschedule',
-            child: Text('Reschedule'),
-          ),
-          const PopupMenuItem(
-            value: 'cancel',
-            child: Text('Cancel'),
-          ),
-        ],
-        onSelected: (value) {
-          if (value == 'cancel') {
-            _showCancelDialog(context);
-          } else if (value == 'reschedule') {
-            _showRescheduleDialog(context);
-          }
-        },
-      );
-    }
-    return const SizedBox();
-  }
-
-  void _showCancelDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancel Booking'),
-        content: const Text('Are you sure you want to cancel this booking?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<BookingBloc>().add(CancelBookingEvent(booking.id));
-              Navigator.pop(context);
-            },
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showRescheduleDialog(BuildContext context) {
-    DateTime? selectedDate;
-    String? selectedTimeSlot;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reschedule Booking'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ElevatedButton(
-              onPressed: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: booking.sessionDate,
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(const Duration(days: 30)),
-                );
-                if (date != null) {
-                  selectedDate = date;
-                }
-              },
-              child: const Text('Select New Date'),
-            ),
-            const SizedBox(height: 16),
-            DropdownButton<String>(
-              hint: const Text('Select New Time'),
-              value: selectedTimeSlot,
-              items: const [
-                '9:00 AM',
-                '10:00 AM',
-                '11:00 AM',
-                '2:00 PM',
-                '3:00 PM',
-                '4:00 PM',
-              ].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (value) {
-                selectedTimeSlot = value;
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (selectedDate != null && selectedTimeSlot != null) {
-                context.read<BookingBloc>().add(
-                      RescheduleBookingEvent(
-                        bookingId: booking.id,
-                        newDate: selectedDate!,
-                        newTimeSlot: selectedTimeSlot!,
-                      ),
-                    );
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Reschedule'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }

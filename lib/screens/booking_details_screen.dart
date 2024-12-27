@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rx_logix/bloc/booking_bloc.dart';
+import 'package:rx_logix/bloc/booking_event.dart';
 import '../models/booking.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 
 class BookingDetailsScreen extends StatelessWidget {
   final Booking booking;
@@ -24,28 +28,34 @@ class BookingDetailsScreen extends StatelessWidget {
             _buildDetailCard(
               title: 'Session Details',
               details: [
-                'Date: ${_formatDate(booking.sessionDate)}',
-                'Time: ${booking.timeSlot}',
+                'Date: ${_formatDate(booking.dateTime)}',
+                'Time: ${_formatTime(booking.dateTime)}',
                 'Status: ${booking.status}',
               ],
             ),
             SizedBox(height: 16.h),
             _buildDetailCard(
-              title: 'Payment Details',
+              title: 'Booking Details',
               details: [
-                'Amount: ₹${booking.amount}',
                 'Booking ID: ${booking.id}',
-                'Created: ${_formatDate(booking.createdAt)}',
+                'Created: ${_formatDate(booking.dateTime)}',
+                'Remark: ${booking.remark}',
               ],
             ),
-            if (booking.status == 'confirmed') ...[
+            if (booking.status.toLowerCase() == 'in progress') ...[
               SizedBox(height: 32.h),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        // Handle reschedule
+                        context.read<BookingBloc>().add(
+                              RescheduleBookingEvent(
+                                bookingId: booking.id,
+                                newDateTime: DateTime.now(),
+                                timeSlot: '10:00 AM',
+                              ),
+                            );
                       },
                       child: Text(
                         'Reschedule',
@@ -57,7 +67,9 @@ class BookingDetailsScreen extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
-                        // Handle cancel
+                        context.read<BookingBloc>().add(
+                              CancelBookingEvent(booking.id),
+                            );
                       },
                       child: Text(
                         'Cancel',
@@ -108,4 +120,8 @@ class BookingDetailsScreen extends StatelessWidget {
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
-} 
+
+  String _formatTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+}

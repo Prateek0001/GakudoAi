@@ -1,53 +1,41 @@
 import 'package:equatable/equatable.dart';
 
-abstract class BookingEvent extends Equatable {
+abstract class BookingEvent {
   const BookingEvent();
-
-  @override
-  List<Object?> get props => [];
 }
 
-class CreateBookingEvent extends BookingEvent {
-  final String expertId;
-  final DateTime sessionDate;
-  final String timeSlot;
-  final double amount;
-  final String paymentId;
-
-  const CreateBookingEvent({
-    required this.expertId,
-    required this.sessionDate,
-    required this.timeSlot,
-    required this.amount,
-    required this.paymentId,
-  });
-
-  @override
-  List<Object?> get props => [expertId, sessionDate, timeSlot, amount, paymentId];
+class FetchBookingsEvent extends BookingEvent {
+  final String username;
+  const FetchBookingsEvent(this.username);
 }
 
 class LoadBookingsEvent extends BookingEvent {}
 
 class CancelBookingEvent extends BookingEvent {
   final String bookingId;
-
   const CancelBookingEvent(this.bookingId);
-
-  @override
-  List<Object?> get props => [bookingId];
 }
 
 class RescheduleBookingEvent extends BookingEvent {
   final String bookingId;
-  final DateTime newDate;
-  final String newTimeSlot;
+  final DateTime newDateTime;
+  final String timeSlot;
 
   const RescheduleBookingEvent({
     required this.bookingId,
-    required this.newDate,
-    required this.newTimeSlot,
+    required this.newDateTime,
+    required this.timeSlot,
   });
+}
 
-  @override
-  List<Object?> get props => [bookingId, newDate, newTimeSlot];
-} 
+class CreateBookingEvent extends BookingEvent {
+  final String username;
+  final DateTime dateTime;
+  final String remark;
+
+  const CreateBookingEvent({
+    required this.username,
+    required this.dateTime,
+    required this.remark,
+  });
+}
