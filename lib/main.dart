@@ -18,6 +18,7 @@ import 'repositories/auth/auth_repository_impl.dart';
 import 'repositories/chat/chat_repository.dart';
 import 'repositories/chat/chat_repository_impl.dart';
 import 'bloc/quiz_bloc.dart';
+import 'bloc/booking_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +37,7 @@ void main() async {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(create: (context) => QuizBloc()),
+          BlocProvider(create: (context) => BookingBloc()),
         ],
         child: ChangeNotifierProvider(
           create: (_) => ThemeProvider(prefs),
@@ -56,28 +58,38 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: StringConstants.appName,
-      theme: ThemeConfig.lightTheme,
-      darkTheme: ThemeConfig.darkTheme,
-      themeMode: context.watch<ThemeProvider>().isDarkMode
-          ? ThemeMode.dark
-          : ThemeMode.light,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/dashboard': (context) => const DashboardScreen(),
-        '/chat': (context) => BlocProvider(
-              create: (context) => ChatBloc(
-                prefs,
-                context.read<ChatRepository>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => QuizBloc(),
+        ),
+        BlocProvider(
+          create: (context) => BookingBloc(),
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: StringConstants.appName,
+        theme: ThemeConfig.lightTheme,
+        darkTheme: ThemeConfig.darkTheme,
+        themeMode: context.watch<ThemeProvider>().isDarkMode
+            ? ThemeMode.dark
+            : ThemeMode.light,
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const LoginScreen(),
+          '/signup': (context) => const SignupScreen(),
+          '/dashboard': (context) => const DashboardScreen(),
+          '/chat': (context) => BlocProvider(
+                create: (context) => ChatBloc(
+                  prefs,
+                  context.read<ChatRepository>(),
+                ),
+                child: const ChatScreen(),
               ),
-              child: const ChatScreen(),
-            ),
-        '/profile': (context) => const ProfileScreen(),
-      },
+          '/profile': (context) => const ProfileScreen(),
+        },
+      ),
     );
   }
 }
