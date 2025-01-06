@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rx_logix/bloc/payment_event.dart';
+import 'package:rx_logix/bloc/payment_state.dart';
+import 'package:rx_logix/constants/storage_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../bloc/booking_bloc.dart';
 import '../bloc/booking_event.dart';
 import '../bloc/booking_state.dart';
 import '../services/user_service.dart';
+import 'package:rx_logix/bloc/payment_bloc.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -16,7 +21,20 @@ class _BookingScreenState extends State<BookingScreen> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   final _remarkController = TextEditingController();
+  void _initiatePayment(BuildContext context) async {
+    final userProfile = await UserService.getCurrentUser();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(StorageConstants.authToken);
 
+    context.read<PaymentBloc>().add(
+      InitiatePaymentEvent(
+        username: userProfile?.username??"",
+        token: token ?? "",
+        feature: "session",
+        postPayment: () => _createBooking(context), // Pass your createBooking function
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,7 +42,19 @@ class _BookingScreenState extends State<BookingScreen> {
         title: const Text('Book Session'),
         elevation: 0,
       ),
-      body: BlocConsumer<BookingBloc, BookingState>(
+      body: BlocListener<PaymentBloc, PaymentState>(
+      listener: (context, paymentState) {
+        if (paymentState is PaymentError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(paymentState.message)),
+          );
+        }else if (paymentState is PaymentSuccess){
+           ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Payment successful")),
+          );
+        }
+        // Handle other payment states if needed
+      },child: BlocConsumer<BookingBloc, BookingState>(
         listener: (context, state) {
           if (state is BookingErrorState) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -93,7 +123,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         child: ElevatedButton(
                           onPressed: state is BookingLoadingState || !canBook
                               ? null
-                              : () => _createBooking(context),
+                              : () => _initiatePayment(context),
                           style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -120,7 +150,7 @@ class _BookingScreenState extends State<BookingScreen> {
             ],
           );
         },
-      ),
+      )),
     );
   }
 
@@ -290,9 +320,9 @@ class _BookingScreenState extends State<BookingScreen> {
               remark: _remarkController.text,
             ),
           );
-    }
-  }
-
+                }
+      }
+      
   @override
   void dispose() {
     _remarkController.dispose();

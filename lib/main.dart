@@ -19,6 +19,7 @@ import 'repositories/chat/chat_repository.dart';
 import 'repositories/chat/chat_repository_impl.dart';
 import 'bloc/quiz_bloc.dart';
 import 'bloc/booking_bloc.dart';
+import 'bloc/payment_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,7 @@ void main() async {
         providers: [
           BlocProvider(create: (context) => QuizBloc()),
           BlocProvider(create: (context) => BookingBloc()),
+          BlocProvider(create: (context) => PaymentBloc()),
         ],
         child: ChangeNotifierProvider(
           create: (_) => ThemeProvider(prefs),
@@ -65,6 +67,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (context) => BookingBloc(),
+        ),
+        BlocProvider(
+          create: (context) => PaymentBloc(),
         ),
       ],
       child: MaterialApp(

@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String baseUrl = 'http://98.70.49.14:8000';
+  static const String baseUrl = 'http://20.40.51.129:8000';
 
   // Auth endpoints
   static const String sendOtp = '/auth/send-otp';
@@ -9,4 +9,10 @@ class ApiConstants {
   static const String userProfileEndpoint = '/api/v1/users/profile';
   static const String forgotPasswordEndpoint = '/api/v1/users/forgot-password';
   static const String chatEndpoint = '/api/v1/chat';
+
+  // Payment endpoints
+  static const String paymentFeatureChargesConfig = '/api/v1/feature-charges-config';
+  static const String paymentStatusEndpoint = '/api/v1/user-payment-status/';
+  static const String postPaymentEndpoint = '/api/v1/post-rzp-pmt/';
+  static const String createOrder = '/api/v1/create-order/';
 }

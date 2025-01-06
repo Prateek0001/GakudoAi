@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:rx_logix/bloc/payment_bloc.dart';
+import 'package:rx_logix/bloc/payment_event.dart';
+import 'package:rx_logix/bloc/payment_state.dart';
+import 'package:rx_logix/constants/storage_constants.dart';
 import 'package:rx_logix/services/user_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../bloc/quiz_bloc.dart';
 import '../bloc/quiz_event.dart';
 import '../bloc/quiz_state.dart';
@@ -12,7 +18,19 @@ class QuizListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return  BlocListener<PaymentBloc, PaymentState>(
+      listener: (context, paymentState) {
+        if (paymentState is PaymentError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(paymentState.message)),
+          );
+        }else if (paymentState is PaymentSuccess){
+           ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Payment successful")),
+          );
+        }
+        // Handle other payment states if needed
+      },child:Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -85,7 +103,7 @@ class QuizListScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildQuizCard(
@@ -302,13 +320,27 @@ class QuizListScreen extends StatelessWidget {
                   onTap: state is ReportGeneratedState
                       ? null
                       : () async {
-                          final userProfile =
+                        final userProfile =
                               await UserService.getCurrentUser();
-                          if (userProfile != null) {
+                        final prefs = await SharedPreferences.getInstance();
+                        final token = prefs.getString(StorageConstants.authToken);
+context.read<PaymentBloc>().add(InitiatePaymentEvent(
+                username: userProfile?.username??"",
+                token: token??"",
+                feature: "report",
+                postPayment: () => {
+                    if (userProfile != null) {
                             context
                                 .read<QuizBloc>()
-                                .add(GenerateReportEvent(userProfile.username));
+                                .add(GenerateReportEvent(userProfile.username))
                           }
+                },
+              
+              )); 
+
+                        
+                          
+                        
                         },
                   borderRadius: BorderRadius.circular(16),
                   child: Row(

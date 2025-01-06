@@ -1,5 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:rx_logix/bloc/payment_bloc.dart';
+import 'package:rx_logix/bloc/payment_event.dart';
+import 'package:rx_logix/constants/storage_constants.dart';
+import 'package:rx_logix/models/user_profile.dart';
+import 'package:rx_logix/repositories/auth/auth_repository_impl.dart';
 import 'package:rx_logix/repositories/chat/chat_repository.dart';
 import 'package:rx_logix/screens/booking_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -54,12 +62,12 @@ class _DashboardViewState extends State<DashboardView> {
     }
   }
 
-  Widget _buildCurrentView() {
+  Widget _buildCurrentView(BuildContext context) {
     switch (_selectedIndex) {
       case 0:
         return _buildHomeView();
       case 1:
-        return _buildTestView();
+        return _buildTestView(context);
       case 2:
         return _buildBookingView();
       case 3:
@@ -183,8 +191,8 @@ class _DashboardViewState extends State<DashboardView> {
     );
   }
 
-  Widget _buildTestView() {
-    return BlocProvider(
+  Widget _buildTestView(BuildContext context) {
+   return BlocProvider(
       create: (context) => QuizBloc(),
       child: const QuizListScreen(),
     );
@@ -414,7 +422,7 @@ class _DashboardViewState extends State<DashboardView> {
           ),
         ],
       ),
-      body: _buildCurrentView(),
+      body: _buildCurrentView(context),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) {

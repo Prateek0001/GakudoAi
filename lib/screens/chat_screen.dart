@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:rx_logix/bloc/payment_bloc.dart';
+import 'package:rx_logix/bloc/payment_event.dart';
+import 'package:rx_logix/bloc/payment_state.dart';
+import 'package:rx_logix/constants/storage_constants.dart';
+import 'package:rx_logix/services/user_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
 import '../bloc/chat_state.dart';
@@ -333,10 +340,19 @@ class _ChatViewState extends State<ChatView> {
     });
   }
 
-  void _sendMessage(String message) {
+  void _sendMessage(String message) async {
     if (message.trim().isEmpty) return;
-    context.read<ChatBloc>().add(SendMessageEvent(message));
-    _messageController.clear();
+    final userProfile = await UserService.getCurrentUser();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(StorageConstants.authToken);
+    context.read<PaymentBloc>().add(
+      InitiatePaymentEvent(
+        username: userProfile?.username??"",
+        token: token ?? "",
+        feature: "chat",
+        postPayment: () => {
+            context.read<ChatBloc>().add(SendMessageEvent(message)),
+    _messageController.clear(),
 
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
@@ -346,12 +362,28 @@ class _ChatViewState extends State<ChatView> {
           curve: Curves.easeOut,
         );
       }
-    });
+    })
+        }, // Pass your createBooking function
+       
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ChatBloc, ChatState>(
+    return  BlocListener<PaymentBloc, PaymentState>(
+      listener: (context, paymentState) {
+        if (paymentState is PaymentError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(paymentState.message)),
+          );
+        }else if (paymentState is PaymentSuccess){
+           ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Payment successful")),
+          );
+        }
+        // Handle other payment states if needed
+      },child:BlocConsumer<ChatBloc, ChatState>(
       listener: (context, state) {
         if (state is ChatError) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -476,7 +508,7 @@ class _ChatViewState extends State<ChatView> {
         }
         return const Center(child: CircularProgressIndicator());
       },
-    );
+    ));
   }
 
   @override
