@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:rx_logix/bloc/payment_bloc.dart';
 import 'package:rx_logix/bloc/payment_event.dart';
+import 'package:rx_logix/bloc/payment_state.dart';
 import 'package:rx_logix/constants/storage_constants.dart';
 import 'package:rx_logix/models/user_profile.dart';
 import 'package:rx_logix/repositories/auth/auth_repository_impl.dart';
@@ -416,6 +417,45 @@ class _DashboardViewState extends State<DashboardView> {
       appBar: AppBar(
         title: Text("GakudoAI"),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.payment),
+            onPressed: () async {
+             final prefs = await SharedPreferences.getInstance();
+             final token = prefs.getString(StorageConstants.authToken);
+             final userProfile = await UserService.getCurrentUser();
+             showDialog(
+               context: context,
+               builder: (BuildContext buildContext) {
+                 return AlertDialog(
+                   title: Text("Payment Consent"),
+                   content: Text("By clicking 'Yes', you consent to make payment for all features (chat, tests, and booking a session)."),
+                   actions: [
+                     TextButton(
+                       child: Text("Yes"),
+                       onPressed: () {
+                         context.read<PaymentBloc>().add(InitiatePaymentEvent(
+                           username: userProfile?.username??"",
+                           token: token??"",
+                           feature: "all",
+                           postPayment: () => {
+                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Payment Successful")))
+                           },
+                         ));
+                         Navigator.of(buildContext).pop();
+                       },
+                     ),
+                     TextButton(
+                       child: Text("No"),
+                       onPressed: () {
+                         Navigator.of(buildContext).pop();
+                       },
+                     ),
+                   ],
+                 );
+               },
+             );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _handleLogout(context),

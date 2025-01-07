@@ -21,7 +21,8 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
         final createdOrder = await AuthRepositoryImpl().createOrder(event.username, event.token, event.feature);
         if (createdOrder.isNotEmpty) {
           String orderId = createdOrder['order_id']; // Replace with actual order ID
-          int amount = createdOrder['amount_due']*100; // Amount in paise (100.00 INR)
+          int actAmount = createdOrder['amount']*100; // actual amount in paise
+          int discAmount = createdOrder['amount_due']*100; // discount amount in paise
 
           Razorpay razorpay = Razorpay();
           razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, (PaymentSuccessResponse response) async {
@@ -29,13 +30,13 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
             final postResponse = await AuthRepositoryImpl().postPayment(
               event.token,
               PostPaymentPayload(
-                actAmount: amount,
+                actAmount: actAmount,
                 feature: event.feature,
                 razorpayOrderId: response.orderId,
                 razorpayPaymentId: response.paymentId,
                 username: event.username,
                 razorpaySignature: response.signature ?? "",
-                discAmount: 0,
+                discAmount: discAmount,
               ),
             );
             if (postResponse==true) {
@@ -55,7 +56,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
 
           razorpay.open({
                     'key': createdOrder['rzp_id'],
-                    'amount': amount,
+                    'amount': actAmount,
                     'name': 'GakudoAi',
                     'description': 'Payment for Order #$orderId',
                     'retry': {'enabled': true, 'max_count': 1},
