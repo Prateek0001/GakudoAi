@@ -16,7 +16,6 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
       final paymentStatus = await AuthRepositoryImpl().getPaymentStatus(event.username, event.token,event.feature);
       if (paymentStatus) {
         event.postPayment();
-        emit(PaymentSuccess());
       } else {
         final createdOrder = await AuthRepositoryImpl().createOrder(event.username, event.token, event.feature);
         if (createdOrder.isNotEmpty) {
