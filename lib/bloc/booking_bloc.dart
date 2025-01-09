@@ -103,6 +103,13 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
           'api-key': token,
           'Content-Type': 'application/json',
         },
+
+        /* 
+        new payload to be added 
+
+        {"bookingId":"check123_cc33fcad-744c-478e-b848-b8d099931169","username":"check123","bookingTime":"2025-01-09T17:21:17.346Z","dateTime":"2025-01-10T18:30:00.000Z","remark":"testing"}
+
+        */
         body: jsonEncode({
           'username': event.username,
           'dateTime': event.dateTime.toUtc().toIso8601String(),
