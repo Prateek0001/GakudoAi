@@ -4,7 +4,7 @@ class  UserProfile {
   final String fullName;
   final bool disabled;
   final String role;
-  final String standard;
+  final int standard;
   final String schoolName;
   final String medium;
   final String mobileNumber;
@@ -31,7 +31,7 @@ class  UserProfile {
       fullName: json['full_name'] ?? '',
       disabled: json['disabled'] ?? false,
       role: json['role'] ?? '',
-      standard: json['standard'] ?? '',
+      standard: json['standard'] ?? 0,
       schoolName: json['school_name'] ?? '',
       medium: json['medium'] ?? '',
       mobileNumber: json['mobile_number'] ?? '',

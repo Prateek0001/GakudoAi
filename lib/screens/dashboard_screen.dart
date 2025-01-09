@@ -456,6 +456,7 @@ class _DashboardViewState extends State<DashboardView> {
              );
             },
           ),
+          if(_selectedIndex==4)
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _handleLogout(context),
