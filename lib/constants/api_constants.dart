@@ -15,4 +15,7 @@ class ApiConstants {
   static const String paymentStatusEndpoint = '/api/v1/user-payment-status/';
   static const String postPaymentEndpoint = '/api/v1/post-rzp-pmt/';
   static const String createOrder = '/api/v1/create-order/';
+
+  // Add this line
+  static const String checkQuizCompletion = '/api/v1/check-quiz-response-exist';
 }

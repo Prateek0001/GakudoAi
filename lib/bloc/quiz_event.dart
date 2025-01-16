@@ -29,3 +29,9 @@ class DownloadReportEvent extends QuizEvent {
 }
 
 class ReportGeneratedEvent extends QuizEvent {}
+
+class CheckQuizCompletionEvent extends QuizEvent {
+  final String userId;
+  final String quizId;
+  const CheckQuizCompletionEvent(this.userId, this.quizId);
+}

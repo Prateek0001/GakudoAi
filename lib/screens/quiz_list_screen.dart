@@ -30,6 +30,7 @@ class _QuizListScreenState extends State<QuizListScreen> {
   void initState() {
     super.initState();
     _checkReportStatus();
+    _checkQuizCompletionStatus();
   }
 
   Future<void> _checkReportStatus() async {
@@ -60,6 +61,25 @@ class _QuizListScreenState extends State<QuizListScreen> {
       }
     } catch (e) {
       print('Error checking report status: $e');
+    }
+  }
+
+  Future<void> _checkQuizCompletionStatus() async {
+    try {
+      final userProfile = await UserService.getCurrentUser();
+      if (userProfile?.username == null) return;
+
+      // Check completion status for all quizzes
+      for (int i = 1; i <= 4; i++) {
+        context.read<QuizBloc>().add(
+          CheckQuizCompletionEvent(
+            userProfile?.username??'',
+            i.toString(),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error checking quiz completion status: $e');
     }
   }
 
@@ -164,7 +184,7 @@ class _QuizListScreenState extends State<QuizListScreen> {
     return BlocBuilder<QuizBloc, QuizState>(
       builder: (context, state) {
         final isCompleted = state is QuizLoadedState &&
-            state.completedQuizzes.contains('$number');
+            state.completedQuizzes.contains(number.toString());
 
         return Container(
           decoration: BoxDecoration(
@@ -290,29 +310,7 @@ class _QuizListScreenState extends State<QuizListScreen> {
                       ],
                     ),
                   ),
-                  if (isCompleted)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Completed',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
+                  
                 ],
               ),
             ),

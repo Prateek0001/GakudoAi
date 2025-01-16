@@ -20,6 +20,7 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
     on<SubmitQuizEvent>(_onSubmitQuiz);
     on<GenerateReportEvent>(_onGenerateReport);
     on<DownloadReportEvent>(_onDownloadReport);
+    on<CheckQuizCompletionEvent>(_onCheckQuizCompletion);
     _loadCompletedQuizzes();
   }
 
@@ -33,8 +34,33 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
       emit(QuizLoadingState());
 
       final token = await _getAuthToken();
+      final userProfile = await _getUserProfile();
+      
+      if (userProfile == null) {
+        emit(QuizErrorState('User profile not found'));
+        return;
+      }
+
+      // Check if quiz is already completed
+      final isCompleted = await _checkQuizCompletion(event.quizId, userProfile.username);
+      if (isCompleted) {
+        if (!completedQuizzes.contains(event.quizId)) {
+          completedQuizzes.add(event.quizId);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setStringList('completed_quizzes', completedQuizzes);
+        }
+        emit(QuizLoadedState(
+          quiz: Quiz(id: event.quizId, questions: []), // Empty quiz since it's completed
+          completedQuizzes: completedQuizzes,
+        ));
+        emit(QuizErrorState('You have already completed this quiz'));
+        return;
+      }
+
+      // /api/v1/quiz/?quiz_id=4&user_id=check123
+
       final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/api/v1/quiz/${event.quizId}'),
+        Uri.parse('${ApiConstants.baseUrl}/api/v1/quiz/?quiz_id=${event.quizId}&user_id=${userProfile.username}'),
         headers: {
           'Accept': 'application/json',
           'api-key': token,
@@ -172,6 +198,48 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
       }
     } catch (e) {
       emit(QuizErrorState(e.toString()));
+    }
+  }
+
+  Future<bool> _checkQuizCompletion(String quizId, String userId) async {
+    try {
+      final token = await _getAuthToken();
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/api/v1/check-quiz-response-exist/?quiz_id=$quizId&user_id=$userId'),
+        headers: {
+          'Accept': 'application/json',
+          'api-key': token,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['message_code'] == 'already_submitted';
+      }
+      return false;
+    } catch (e) {
+      print('Error checking quiz completion: $e');
+      return false;
+    }
+  }
+
+  Future<void> _onCheckQuizCompletion(
+    CheckQuizCompletionEvent event, 
+    Emitter<QuizState> emit
+  ) async {
+    try {
+      final isCompleted = await _checkQuizCompletion(event.quizId, event.userId);
+      if (isCompleted && !completedQuizzes.contains(event.quizId)) {
+        completedQuizzes.add(event.quizId);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList('completed_quizzes', completedQuizzes);
+      }
+      emit(QuizLoadedState(
+        quiz: Quiz(id: event.quizId, questions: []),
+        completedQuizzes: completedQuizzes,
+      ));
+    } catch (e) {
+      print('Error checking quiz completion: $e');
     }
   }
 }
