@@ -28,7 +28,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           mobileNumber: userProfile.mobileNumber,
           schoolName: userProfile.schoolName,
           medium: userProfile.medium,
-          standard: userProfile.standard,
+          standard: int.parse(userProfile.standard),
           location: '', // These fields are not in UserProfile
           segment: 'School',
           stream: '',

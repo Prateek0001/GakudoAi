@@ -166,7 +166,7 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        emit(ReportDownloadLinkReceivedState(data['download_link']));
+        emit(ReportDownloadLinkReceivedState(data['url']));
       } else {
         throw Exception('Failed to get download link');
       }

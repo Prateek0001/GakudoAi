@@ -12,9 +12,56 @@ import '../bloc/quiz_event.dart';
 import '../bloc/quiz_state.dart';
 import 'quiz_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../constants/api_constants.dart';
 
-class QuizListScreen extends StatelessWidget {
+class QuizListScreen extends StatefulWidget {
   const QuizListScreen({super.key});
+
+  @override
+  State<QuizListScreen> createState() => _QuizListScreenState();
+}
+
+class _QuizListScreenState extends State<QuizListScreen> {
+  bool _isReportGenerated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkReportStatus();
+  }
+
+  Future<void> _checkReportStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(StorageConstants.authToken);
+      final userProfile = await UserService.getCurrentUser();
+      
+      if (userProfile?.username == null || token == null) return;
+
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/api/v1/check-report-exist/?user_id=${userProfile?.username ?? ''}'),
+        headers: {
+          'Accept': 'application/json',
+          'api-key': token,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _isReportGenerated = data['message_code'] == 'already_generated';
+        });
+        
+        if (_isReportGenerated) {
+          context.read<QuizBloc>().add(ReportGeneratedEvent());
+        }
+      }
+    } catch (e) {
+      print('Error checking report status: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -292,80 +339,65 @@ class QuizListScreen extends StatelessWidget {
         }
       },
       builder: (context, state) {
+        final bool showGenerateButton = !_isReportGenerated && state is! ReportGeneratedState;
+        final bool showDownloadButton = _isReportGenerated || state is ReportGeneratedState;
+
         return Column(
           children: [
-            Container(
-              width: double.infinity,
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: state is ReportGeneratedState
-                      ? [Colors.grey, Colors.grey.shade600]
-                      : [const Color(0xFF9C27B0), const Color(0xFFE040FB)],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF9C27B0).withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
+            if (showGenerateButton)
+              Container(
+                width: double.infinity,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF9C27B0), Color(0xFFE040FB)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
                   ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: state is ReportGeneratedState
-                      ? null
-                      : () async {
-                        final userProfile =
-                              await UserService.getCurrentUser();
-                        final prefs = await SharedPreferences.getInstance();
-                        final token = prefs.getString(StorageConstants.authToken);
-context.read<PaymentBloc>().add(InitiatePaymentEvent(
-                username: userProfile?.username??"",
-                token: token??"",
-                feature: "report",
-                postPayment: () => {
-                    if (userProfile != null) {
-                            context
-                                .read<QuizBloc>()
-                                .add(GenerateReportEvent(userProfile.username))
-                          }
-                },
-              
-              )); 
-
-                        
-                          
-                        
-                        },
                   borderRadius: BorderRadius.circular(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(
-                        Icons.assessment_outlined,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      SizedBox(width: 12),
-                      Text(
-                        'Generate Report',
-                        style: TextStyle(
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF9C27B0).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () async {
+                      final userProfile = await UserService.getCurrentUser();
+                      if (userProfile != null) {
+                        context
+                            .read<QuizBloc>()
+                            .add(GenerateReportEvent(userProfile.username));
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(
+                          Icons.assessment_outlined,
                           color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          size: 24,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 12),
+                        Text(
+                          'Generate Report',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            if (state is ReportGeneratedState) ...[
+            if (showDownloadButton) ...[
               const SizedBox(height: 16),
               Container(
                 width: double.infinity,

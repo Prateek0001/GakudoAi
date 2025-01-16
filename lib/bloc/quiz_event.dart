@@ -27,3 +27,5 @@ class DownloadReportEvent extends QuizEvent {
   final String userId;
   const DownloadReportEvent(this.userId);
 }
+
+class ReportGeneratedEvent extends QuizEvent {}
