@@ -9,6 +9,7 @@ class BookingInitial extends BookingState {}
 
 class BookingLoadingState extends BookingState {}
 
+
 class BookingsLoadedState extends BookingState {
   final List<Booking> bookings;
   const BookingsLoadedState(this.bookings);

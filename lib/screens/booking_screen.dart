@@ -21,20 +21,6 @@ class _BookingScreenState extends State<BookingScreen> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   final _remarkController = TextEditingController();
-  void _initiatePayment(BuildContext context) async {
-    final userProfile = await UserService.getCurrentUser();
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(StorageConstants.authToken);
-
-    context.read<PaymentBloc>().add(
-      InitiatePaymentEvent(
-        username: userProfile?.username??"",
-        token: token ?? "",
-        feature: "session",
-        postPayment: () => _createBooking(context), // Pass your createBooking function
-      ),
-    );
-  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,6 +47,8 @@ class _BookingScreenState extends State<BookingScreen> {
               SnackBar(content: Text(state.message)),
             );
           } else if (state is BookingCreatedState) {
+            final bookingId = state.bookingId;
+            BlocProvider.of<BookingBloc>(context).add(UpdateBookingIdEvent(bookingId));
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Booking created successfully')),
             );

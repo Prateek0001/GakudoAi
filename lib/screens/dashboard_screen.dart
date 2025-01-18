@@ -12,6 +12,7 @@ import 'package:rx_logix/repositories/auth/auth_repository_impl.dart';
 import 'package:rx_logix/repositories/chat/chat_repository.dart';
 import 'package:rx_logix/screens/booking_details_screen.dart';
 import 'package:rx_logix/screens/booking_screen.dart';
+import 'package:rx_logix/screens/payment_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/quiz_list_screen.dart';
 import '../screens/chat_screen.dart';
@@ -414,9 +415,39 @@ class _DashboardViewState extends State<DashboardView> {
                                                 ),
                                                 if (booking.status.toLowerCase() == "payment pending")
                                                   ElevatedButton.icon(
-                                                    onPressed: () {
-                                                      // TODO: Implement payment logic
-                                                    },
+                                                    onPressed: ()async {
+                                                  
+    final userProfile = await UserService.getCurrentUser();
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(StorageConstants.authToken);
+     final bookingBloc = BlocProvider.of<BookingBloc>(context);
+            final createdOrder = await AuthRepositoryImpl().createOrder(userProfile?.username??"", token??"", 'session');
+if(createdOrder.isNotEmpty){
+   showDialog(
+      context: context,
+      builder: (buildContext) => PaymentDialog(
+        username: userProfile?.username??"", // Replace with actual username
+        feature: 'session',
+        originalPrice: createdOrder['amount']/100.toDouble(),
+        discountedPrice: createdOrder['amount_due']/100.toDouble(),onPaynow: (){
+Navigator.pop(buildContext);
+    context.read<PaymentBloc>().add(
+      InitiatePaymentEvent(sessionId:bookingBloc.currentBookingId ,
+        username: userProfile?.username??"",createdOrder: createdOrder,
+        token: token ?? "",
+        feature: "session",
+        postPayment: () => (){
+        context.read<BookingBloc>().add(FetchBookingsEvent(userProfile?.username??""));
+        }, // Pass your createBooking function
+      ),
+    );
+  
+                                                   
+        },
+      ),
+    );
+}
+ },
                                                     icon: const Icon(Icons.payment, size: 18),
                                                     label: const Text('Pay Now'),
                                                     style: ElevatedButton.styleFrom(

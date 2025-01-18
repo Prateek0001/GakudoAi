@@ -43,7 +43,7 @@ class PostPaymentPayload {
     Map<String, dynamic> toJson() => {
         "username": username,
         "feature": feature,
-        "session_id": sessionId??"",
+       if(sessionId!=null&&sessionId!="") "session_id": sessionId??"",
         "act_amount": actAmount,
         "disc_amount": discAmount,
         "razorpay_order_id": razorpayOrderId,

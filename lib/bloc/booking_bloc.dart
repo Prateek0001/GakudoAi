@@ -11,12 +11,14 @@ import '../constants/storage_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BookingBloc extends Bloc<BookingEvent, BookingState> {
+  String currentBookingId="";
   BookingBloc() : super(BookingInitial()) {
     on<FetchBookingsEvent>(_onFetchBookings);
     on<LoadBookingsEvent>(_onLoadBookings);
     on<CreateBookingEvent>(_onCreateBooking);
     on<CancelBookingEvent>(_onCancelBooking);
     on<RescheduleBookingEvent>(_onRescheduleBooking);
+    on<UpdateBookingIdEvent>((event, emit) => currentBookingId = event.newBookingId,);
   }
 
   Future<void> _onFetchBookings(

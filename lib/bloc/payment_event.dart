@@ -8,14 +8,18 @@ class InitiatePaymentEvent extends PaymentEvent {
   final String token;
   final String feature;
   final Function postPayment;
+  final String? sessionId;
+  final Map<String,dynamic>? createdOrder;
 
-  const InitiatePaymentEvent({
+   InitiatePaymentEvent({
     required this.username,
     required this.token,
     required this.feature,
     required this.postPayment,
+    this.sessionId,
+    this.createdOrder
   });
 
   @override
-  List<Object> get props => [username, token, feature, postPayment];
+  List<Object> get props => [username, token, feature, postPayment,sessionId??"",createdOrder??{}];
 } 

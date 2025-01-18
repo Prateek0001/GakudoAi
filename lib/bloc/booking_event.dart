@@ -27,7 +27,11 @@ class RescheduleBookingEvent extends BookingEvent {
     required this.timeSlot,
   });
 }
+class UpdateBookingIdEvent extends BookingEvent {
+  final String newBookingId;
 
+  UpdateBookingIdEvent(this.newBookingId);
+}
 class CreateBookingEvent extends BookingEvent {
   final String username;
   final DateTime dateTime;
