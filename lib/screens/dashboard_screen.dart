@@ -10,6 +10,7 @@ import 'package:rx_logix/constants/storage_constants.dart';
 import 'package:rx_logix/models/user_profile.dart';
 import 'package:rx_logix/repositories/auth/auth_repository_impl.dart';
 import 'package:rx_logix/repositories/chat/chat_repository.dart';
+import 'package:rx_logix/screens/booking_details_screen.dart';
 import 'package:rx_logix/screens/booking_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/quiz_list_screen.dart';
@@ -203,12 +204,10 @@ class _DashboardViewState extends State<DashboardView> {
     return BlocBuilder<BookingBloc, BookingState>(
       builder: (context, state) {
         if (state is BookingInitial) {
-          // Fetch bookings when view is loaded
           context.read<BookingBloc>().add(
                 FetchBookingsEvent(
                   context.read<DashboardBloc>().state is DashboardLoadedState
-                      ? (context.read<DashboardBloc>().state
-                              as DashboardLoadedState)
+                      ? (context.read<DashboardBloc>().state as DashboardLoadedState)
                           .userProfile
                           .username
                       : '',
@@ -218,93 +217,258 @@ class _DashboardViewState extends State<DashboardView> {
         }
 
         return Scaffold(
-          body: state is BookingLoadingState
-              ? const Center(child: CircularProgressIndicator())
-              : state is BookingsLoadedState
-                  ? state.bookings.isEmpty
-                      ? const Center(child: Text('No bookings found'))
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: state.bookings.length,
-                          itemBuilder: (context, index) {
-                            final booking = state.bookings[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.all(16),
-                                title: Text(
-                                  booking.remark,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Theme.of(context).colorScheme.background,
+                  Theme.of(context).colorScheme.background.withOpacity(0.95),
+                ],
+              ),
+            ),
+            child: state is BookingLoadingState
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : state is BookingsLoadedState
+                    ? state.bookings.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.calendar_today_outlined,
+                                    size: 64,
+                                    color: Theme.of(context).colorScheme.primary,
                                   ),
                                 ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.calendar_today,
-                                            size: 16),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          booking.dateTime
-                                              .toString()
-                                              .split('.')[0],
-                                          style: TextStyle(
-                                              color: Colors.grey[600]),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: booking.status == 'In Progress'
-                                            ? Colors.blue.withOpacity(0.1)
-                                            : Colors.green.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        booking.status,
-                                        style: TextStyle(
-                                          color: booking.status == 'In Progress'
-                                              ? Colors.blue
-                                              : Colors.green,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                const SizedBox(height: 24),
+                                Text(
+                                  'No Bookings Yet',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.onBackground,
+                                  ),
                                 ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Create your first booking by tapping the + button',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const BookingScreen()),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Create Booking'),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              context.read<BookingBloc>().add(
+                                    FetchBookingsEvent(
+                                      context.read<DashboardBloc>().state is DashboardLoadedState
+                                          ? (context.read<DashboardBloc>().state as DashboardLoadedState)
+                                              .userProfile
+                                              .username
+                                          : '',
+                                    ),
+                                  );
+                            },
+                            child: ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: state.bookings.length,
+                              itemBuilder: (context, index) {
+                                final booking = state.bookings[index];
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Card(
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(16),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => BookingDetailsScreen(booking: booking),
+                                          ),
+                                        );
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.all(12),
+                                                  decoration: BoxDecoration(
+                                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.event_note,
+                                                    color: Theme.of(context).colorScheme.primary,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        booking.remark,
+                                                        style: const TextStyle(
+                                                          fontSize: 18,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.access_time,
+                                                            size: 16,
+                                                            color: Colors.grey[600],
+                                                          ),
+                                                          const SizedBox(width: 4),
+                                                          Text(
+                                                            booking.dateTime.toString().split('.')[0],
+                                                            style: TextStyle(
+                                                              color: Colors.grey[600],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 6,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: _getStatusColor(booking.status).withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(20),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        _getStatusIcon(booking.status),
+                                                        size: 16,
+                                                        color: _getStatusColor(booking.status),
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        booking.status,
+                                                        style: TextStyle(
+                                                          color: _getStatusColor(booking.status),
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                if (booking.status.toLowerCase() == "payment pending")
+                                                  ElevatedButton.icon(
+                                                    onPressed: () {
+                                                      // TODO: Implement payment logic
+                                                    },
+                                                    icon: const Icon(Icons.payment, size: 18),
+                                                    label: const Text('Pay Now'),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: Colors.green,
+                                                      foregroundColor: Colors.white,
+                                                      padding: const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 8,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              state is BookingErrorState ? state.message : 'Unknown error',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                                fontSize: 16,
                               ),
-                            );
-                          },
-                        )
-                  : Center(
-                      child: Text(
-                        state is BookingErrorState
-                            ? state.message
-                            : 'Unknown error',
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-          floatingActionButton: FloatingActionButton(
+          ),
+          floatingActionButton: FloatingActionButton.extended(
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const BookingScreen()),
               );
             },
-            child: const Icon(Icons.add),
-            tooltip: 'Add Booking',
+            icon: const Icon(Icons.add),
+            label: const Text('New Booking'),
           ),
         );
       },
@@ -569,5 +733,35 @@ class _DashboardViewState extends State<DashboardView> {
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'payment pending':
+        return Colors.orange;
+      case 'confirmed':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      case 'completed':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'payment pending':
+        return Icons.payment;
+      case 'confirmed':
+        return Icons.check_circle;
+      case 'cancelled':
+        return Icons.cancel;
+      case 'completed':
+        return Icons.done_all;
+      default:
+        return Icons.info;
+    }
   }
 }

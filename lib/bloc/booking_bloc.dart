@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:rx_logix/bloc/booking_event.dart';
 import 'package:rx_logix/bloc/booking_state.dart';
 import 'package:rx_logix/services/user_service.dart';
+import 'package:uuid/uuid.dart';
 import 'dart:convert';
 import '../models/booking.dart';
 import '../constants/api_constants.dart';
@@ -111,8 +112,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
 
         */
         body: jsonEncode({
+          'bookingId': "${event.username}_${const Uuid().v4()}",
           'username': event.username,
           'dateTime': event.dateTime.toUtc().toIso8601String(),
+          'bookingTime' : DateTime.now().toUtc().toIso8601String(),
           'remark': event.remark,
         }),
       );

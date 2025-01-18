@@ -53,6 +53,17 @@ class BookingHistoryView extends StatelessWidget {
                         Text('Status: ${booking.status}'),
                       ],
                     ),
+                    trailing: booking.status.toLowerCase() == "payment pending"
+                        ? SizedBox(
+                            width: 120, // Give enough width for the button
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // TODO: Implement payment logic
+                              },
+                              child: const Text('Make Payment'),
+                            ),
+                          )
+                        : null,
                     onTap: () {
                       Navigator.push(
                         context,
