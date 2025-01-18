@@ -123,7 +123,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         child: ElevatedButton(
                           onPressed: state is BookingLoadingState || !canBook
                               ? null
-                              : () => _initiatePayment(context),
+                              : () => _createBooking(context),
                           style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
