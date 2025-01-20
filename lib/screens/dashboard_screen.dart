@@ -432,7 +432,7 @@ if(createdOrder.isNotEmpty){
         discountedPrice: createdOrder['amount_due']/100.toDouble(),onPaynow: (){
 Navigator.pop(buildContext);
     context.read<PaymentBloc>().add(
-      InitiatePaymentEvent(sessionId:bookingBloc.currentBookingId ,
+      InitiatePaymentEvent(sessionId:booking.id ,
         username: userProfile?.username??"",createdOrder: createdOrder,
         token: token ?? "",
         feature: "session",
