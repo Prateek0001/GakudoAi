@@ -27,242 +27,354 @@ class _BookingScreenState extends State<BookingScreen> {
       appBar: AppBar(
         title: const Text('Book Session'),
         elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
       ),
       body: BlocListener<PaymentBloc, PaymentState>(
-      listener: (context, paymentState) {
-        if (paymentState is PaymentError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(paymentState.message)),
-          );
-        }else if (paymentState is PaymentSuccess){
-           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Payment successful")),
-          );
-        }
-        // Handle other payment states if needed
-      },child: BlocConsumer<BookingBloc, BookingState>(
-        listener: (context, state) {
-          if (state is BookingErrorState) {
+        listener: (context, paymentState) {
+          if (paymentState is PaymentError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+              SnackBar(content: Text(paymentState.message)),
             );
-          } else if (state is BookingCreatedState) {
-            final bookingId = state.bookingId;
-            BlocProvider.of<BookingBloc>(context).add(UpdateBookingIdEvent(bookingId));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Booking created successfully')),
+          }else if (paymentState is PaymentSuccess){
+             ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Payment successful")),
             );
-            Navigator.pop(context);
           }
+          // Handle other payment states if needed
         },
-        builder: (context, state) {
-          return Stack(
-            children: [
-              SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Schedule Your Session',
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Choose your preferred date and time',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                    ),
-                    const SizedBox(height: 32),
-                    _buildDatePicker(context),
-                    const SizedBox(height: 24),
-                    _buildTimePicker(context),
-                    const SizedBox(height: 24),
-                    _buildRemarkField(),
-                    const SizedBox(height: 48),
-                  ],
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  padding: const EdgeInsets.all(24),
+        child: BlocConsumer<BookingBloc, BookingState>(
+          listener: (context, state) {
+            if (state is BookingErrorState) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            } else if (state is BookingCreatedState) {
+              final bookingId = state.bookingId;
+              BlocProvider.of<BookingBloc>(context).add(UpdateBookingIdEvent(bookingId));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Booking created successfully')),
+              );
+              Navigator.pop(context);
+            }
+          },
+          builder: (context, state) {
+            return Stack(
+              children: [
+                Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Theme.of(context).primaryColor.withOpacity(0.1),
+                        Colors.white,
+                      ],
+                    ),
                   ),
-                  child: ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: _remarkController,
-                    builder: (context, value, child) {
-                      final canBook = _canBook();
-                      return SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: state is BookingLoadingState || !canBook
-                              ? null
-                              : () => _createBooking(context),
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Card(
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Schedule Your Session',
+                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Choose your preferred date and time',
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: state is BookingLoadingState
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
-                              : const Text('Book Session'),
                         ),
-                      );
-                    },
+                        const SizedBox(height: 24),
+                        _buildDatePicker(context),
+                        const SizedBox(height: 24),
+                        _buildTimePicker(context),
+                        const SizedBox(height: 24),
+                        _buildRemarkField(),
+                        const SizedBox(height: 80),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
-      )),
+                _buildBottomButton(context, state),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
   Widget _buildDatePicker(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Date',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () => _selectDate(context),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Icon(Icons.calendar_today, color: Colors.grey[600]),
-                const SizedBox(width: 12),
-                Text(
-                  _selectedDate != null
-                      ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
-                      : 'Select a date',
+                Icon(Icons.calendar_today, 
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Select Date',
                   style: TextStyle(
-                    color: _selectedDate != null
-                        ? Colors.black87
-                        : Colors.grey[600],
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () => _selectDate(context),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey.shade50,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedDate != null
+                          ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
+                          : 'Select a date',
+                      style: TextStyle(
+                        color: _selectedDate != null
+                            ? Colors.black87
+                            : Colors.grey[600],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios, 
+                      size: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildTimePicker(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Time',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () => _selectTime(context),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Icon(Icons.access_time, color: Colors.grey[600]),
-                const SizedBox(width: 12),
-                Text(
-                  _selectedTime != null
-                      ? '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
-                      : 'Select a time',
+                Icon(Icons.access_time,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Select Time',
                   style: TextStyle(
-                    color: _selectedTime != null
-                        ? Colors.black87
-                        : Colors.grey[600],
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () => _selectTime(context),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey.shade50,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedTime != null
+                          ? '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
+                          : 'Select a time',
+                      style: TextStyle(
+                        color: _selectedTime != null
+                            ? Colors.black87
+                            : Colors.grey[600],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios, 
+                      size: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildRemarkField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Remark',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _remarkController,
-          decoration: InputDecoration(
-            hintText: 'Enter session details',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.note_alt,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Session Details',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _remarkController,
+              decoration: InputDecoration(
+                hintText: 'Enter your session details here...',
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                ),
+              ),
+              maxLines: 3,
+              onChanged: (_) => setState(() {}),
             ),
-          ),
-          maxLines: 3,
-          onChanged: (_) => setState(() {}), // Trigger rebuild for button state
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildBottomButton(BuildContext context, BookingState state) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: ValueListenableBuilder<TextEditingValue>(
+          valueListenable: _remarkController,
+          builder: (context, value, child) {
+            final canBook = _canBook();
+            return SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: state is BookingLoadingState || !canBook
+                    ? null
+                    : () => _createBooking(context),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  backgroundColor: Theme.of(context).primaryColor,
+                  elevation: 2,
+                ),
+                child: state is BookingLoadingState
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : const Text(
+                        'Book Session',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white
+                        ),
+                      ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    // Get tomorrow's date at the start of the day
+    final tomorrow = DateTime.now().add(const Duration(days: 2));
+    final initialDate = DateTime(tomorrow.year, tomorrow.month, tomorrow.day);
+    
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: initialDate, // Set minimum date to tomorrow
       lastDate: DateTime.now().add(const Duration(days: 30)),
     );
     if (picked != null) {
