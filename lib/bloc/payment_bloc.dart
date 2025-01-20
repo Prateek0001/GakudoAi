@@ -107,6 +107,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
           razorpay.open({
                     'key': event.createdOrder?['rzp_id'],
                     'amount': discAmount,
+                    'order_id': orderId,
                     'name': 'GakudoAi',
                     'description': 'Payment for Order #$orderId',
                     'retry': {'enabled': true, 'max_count': 1},
