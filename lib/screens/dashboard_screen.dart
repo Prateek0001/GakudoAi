@@ -436,8 +436,8 @@ Navigator.pop(buildContext);
         username: userProfile?.username??"",createdOrder: createdOrder,
         token: token ?? "",
         feature: "session",
-        postPayment: () => (){
-        context.read<BookingBloc>().add(FetchBookingsEvent(userProfile?.username??""));
+        postPayment: () =>{
+        context.read<BookingBloc>().add(FetchBookingsEvent(userProfile?.username??""))
         }, // Pass your createBooking function
       ),
     );
