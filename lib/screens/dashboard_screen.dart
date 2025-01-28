@@ -26,6 +26,7 @@ import '../repositories/auth/auth_repository.dart';
 import '../bloc/booking_bloc.dart';
 import '../bloc/booking_event.dart';
 import '../bloc/booking_state.dart';
+import '../screens/payment_status_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -98,6 +99,7 @@ class _DashboardViewState extends State<DashboardView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Welcome Card
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
@@ -105,10 +107,7 @@ class _DashboardViewState extends State<DashboardView> {
                         gradient: LinearGradient(
                           colors: [
                             Theme.of(context).colorScheme.primary,
-                            Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.8),
+                            Theme.of(context).colorScheme.primary.withOpacity(0.8),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -116,10 +115,7 @@ class _DashboardViewState extends State<DashboardView> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.3),
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -148,6 +144,51 @@ class _DashboardViewState extends State<DashboardView> {
                       ),
                     ),
                     const SizedBox(height: 32),
+                    
+                    // What We Do Section
+                    const Text(
+                      'What We Do?',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'We are IIT and NIT alumni with extensive experience in Artificial Intelligence, '
+                      'honed through work in MNCs and startups. Using proprietary AI models, we deliver:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Features List
+                    _buildFeatureItem(
+                      icon: Icons.psychology,
+                      title: 'Student Assessment',
+                      description: 'Personality and potential assessment with AI-models',
+                    ),
+                    _buildFeatureItem(
+                      icon: Icons.sentiment_satisfied_alt,
+                      title: 'EQ Analysis',
+                      description: 'Identification of emotionality quotient',
+                    ),
+                    _buildFeatureItem(
+                      icon: Icons.trending_up,
+                      title: 'Career Guidance',
+                      description: 'Top 5 career option recommendations with descriptions',
+                    ),
+                    _buildFeatureItem(
+                      icon: Icons.description,
+                      title: 'Detailed Report',
+                      description: 'Six-page detailed PDF report about key characteristics',
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    // Quick Actions Section
                     const Text(
                       'Quick Actions',
                       style: TextStyle(
@@ -173,16 +214,6 @@ class _DashboardViewState extends State<DashboardView> {
                         );
                       },
                     ),
-                    const SizedBox(height: 16),
-                    _buildDashboardCard(
-                      context,
-                      title: 'Download Report',
-                      subtitle: 'View and download your performance reports',
-                      icon: Icons.analytics_outlined,
-                      onTap: () {
-                        // TODO: Implement report download
-                      },
-                    ),
                   ],
                 ),
               ),
@@ -195,7 +226,7 @@ class _DashboardViewState extends State<DashboardView> {
   }
 
   Widget _buildTestView(BuildContext context) {
-   return BlocProvider(
+    return BlocProvider(
       create: (context) => QuizBloc(),
       child: const QuizListScreen(),
     );
@@ -208,7 +239,8 @@ class _DashboardViewState extends State<DashboardView> {
           context.read<BookingBloc>().add(
                 FetchBookingsEvent(
                   context.read<DashboardBloc>().state is DashboardLoadedState
-                      ? (context.read<DashboardBloc>().state as DashboardLoadedState)
+                      ? (context.read<DashboardBloc>().state
+                              as DashboardLoadedState)
                           .userProfile
                           .username
                       : '',
@@ -242,13 +274,17 @@ class _DashboardViewState extends State<DashboardView> {
                                 Container(
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withOpacity(0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     Icons.calendar_today_outlined,
                                     size: 64,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -257,7 +293,9 @@ class _DashboardViewState extends State<DashboardView> {
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onBackground,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onBackground,
                                   ),
                                 ),
                                 const SizedBox(height: 12),
@@ -265,7 +303,10 @@ class _DashboardViewState extends State<DashboardView> {
                                   'Create your first booking by tapping the + button',
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onBackground
+                                        .withOpacity(0.7),
                                   ),
                                 ),
                                 const SizedBox(height: 32),
@@ -273,13 +314,16 @@ class _DashboardViewState extends State<DashboardView> {
                                   onPressed: () {
                                     Navigator.push(
                                       context,
-                                      MaterialPageRoute(builder: (context) => const BookingScreen()),
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const BookingScreen()),
                                     );
                                   },
                                   icon: const Icon(Icons.add),
                                   label: const Text('Create Booking'),
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 12),
                                   ),
                                 ),
                               ],
@@ -289,8 +333,10 @@ class _DashboardViewState extends State<DashboardView> {
                             onRefresh: () async {
                               context.read<BookingBloc>().add(
                                     FetchBookingsEvent(
-                                      context.read<DashboardBloc>().state is DashboardLoadedState
-                                          ? (context.read<DashboardBloc>().state as DashboardLoadedState)
+                                      context.read<DashboardBloc>().state
+                                              is DashboardLoadedState
+                                          ? (context.read<DashboardBloc>().state
+                                                  as DashboardLoadedState)
                                               .userProfile
                                               .username
                                           : '',
@@ -325,38 +371,52 @@ class _DashboardViewState extends State<DashboardView> {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => BookingDetailsScreen(booking: booking),
+                                            builder: (context) =>
+                                                BookingDetailsScreen(
+                                                    booking: booking),
                                           ),
                                         );
                                       },
                                       child: Padding(
                                         padding: const EdgeInsets.all(16),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
                                               children: [
                                                 Container(
-                                                  padding: const EdgeInsets.all(12),
+                                                  padding:
+                                                      const EdgeInsets.all(12),
                                                   decoration: BoxDecoration(
-                                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(12),
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
                                                   ),
                                                   child: Icon(
                                                     Icons.event_note,
-                                                    color: Theme.of(context).colorScheme.primary,
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 12),
                                                 Expanded(
                                                   child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
                                                       Text(
                                                         booking.remark,
                                                         style: const TextStyle(
                                                           fontSize: 18,
-                                                          fontWeight: FontWeight.bold,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
                                                       ),
                                                       const SizedBox(height: 4),
@@ -365,13 +425,18 @@ class _DashboardViewState extends State<DashboardView> {
                                                           Icon(
                                                             Icons.access_time,
                                                             size: 16,
-                                                            color: Colors.grey[600],
+                                                            color: Colors
+                                                                .grey[600],
                                                           ),
-                                                          const SizedBox(width: 4),
+                                                          const SizedBox(
+                                                              width: 4),
                                                           Text(
-                                                            booking.dateTime.toString().split('.')[0],
+                                                            booking.dateTime
+                                                                .toString()
+                                                                .split('.')[0],
                                                             style: TextStyle(
-                                                              color: Colors.grey[600],
+                                                              color: Colors
+                                                                  .grey[600],
                                                             ),
                                                           ),
                                                         ],
@@ -383,77 +448,146 @@ class _DashboardViewState extends State<DashboardView> {
                                             ),
                                             const SizedBox(height: 16),
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
                                                     horizontal: 12,
                                                     vertical: 6,
                                                   ),
                                                   decoration: BoxDecoration(
-                                                    color: _getStatusColor(booking.status).withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(20),
+                                                    color: _getStatusColor(
+                                                            booking.status)
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20),
                                                   ),
                                                   child: Row(
-                                                    mainAxisSize: MainAxisSize.min,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
                                                     children: [
                                                       Icon(
-                                                        _getStatusIcon(booking.status),
+                                                        _getStatusIcon(
+                                                            booking.status),
                                                         size: 16,
-                                                        color: _getStatusColor(booking.status),
+                                                        color: _getStatusColor(
+                                                            booking.status),
                                                       ),
                                                       const SizedBox(width: 4),
                                                       Text(
                                                         booking.status,
                                                         style: TextStyle(
-                                                          color: _getStatusColor(booking.status),
-                                                          fontWeight: FontWeight.w500,
+                                                          color:
+                                                              _getStatusColor(
+                                                                  booking
+                                                                      .status),
+                                                          fontWeight:
+                                                              FontWeight.w500,
                                                         ),
                                                       ),
                                                     ],
                                                   ),
                                                 ),
-                                                if (booking.status.toLowerCase() == "payment pending")
+                                                if (booking.status
+                                                        .toLowerCase() ==
+                                                    "payment pending")
                                                   ElevatedButton.icon(
-                                                    onPressed: ()async {
-                                                  
-    final userProfile = await UserService.getCurrentUser();
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(StorageConstants.authToken);
-     final bookingBloc = BlocProvider.of<BookingBloc>(context);
-            final createdOrder = await AuthRepositoryImpl().createOrder(userProfile?.username??"", token??"", 'session');
-if(createdOrder.isNotEmpty){
-   showDialog(
-      context: context,
-      builder: (buildContext) => PaymentDialog(
-        username: userProfile?.username??"", // Replace with actual username
-        feature: 'session',
-        originalPrice: createdOrder['amount']/100.toDouble(),
-        discountedPrice: createdOrder['amount_due']/100.toDouble(),onPaynow: (){
-Navigator.pop(buildContext);
-    context.read<PaymentBloc>().add(
-      InitiatePaymentEvent(sessionId:booking.id ,
-        username: userProfile?.username??"",createdOrder: createdOrder,
-        token: token ?? "",
-        feature: "session",
-        postPayment: () =>{
-        context.read<BookingBloc>().add(FetchBookingsEvent(userProfile?.username??""))
-        }, // Pass your createBooking function
-      ),
-    );
-  
-                                                   
-        },
-      ),
-    );
-}
- },
-                                                    icon: const Icon(Icons.payment, size: 18),
-                                                    label: const Text('Pay Now'),
-                                                    style: ElevatedButton.styleFrom(
-                                                      backgroundColor: Colors.green,
-                                                      foregroundColor: Colors.white,
-                                                      padding: const EdgeInsets.symmetric(
+                                                    onPressed: () async {
+                                                      final userProfile =
+                                                          await UserService
+                                                              .getCurrentUser();
+                                                      final prefs =
+                                                          await SharedPreferences
+                                                              .getInstance();
+                                                      final token =
+                                                          prefs.getString(
+                                                              StorageConstants
+                                                                  .authToken);
+                                                      final bookingBloc =
+                                                          BlocProvider.of<
+                                                                  BookingBloc>(
+                                                              context);
+                                                      final createdOrder =
+                                                          await AuthRepositoryImpl()
+                                                              .createOrder(
+                                                                  userProfile
+                                                                          ?.username ??
+                                                                      "",
+                                                                  token ?? "",
+                                                                  'session');
+                                                      if (createdOrder
+                                                          .isNotEmpty) {
+                                                        showDialog(
+                                                          context: context,
+                                                          builder:
+                                                              (buildContext) =>
+                                                                  PaymentDialog(
+                                                            username: userProfile
+                                                                    ?.username ??
+                                                                "", // Replace with actual username
+                                                            feature: 'session',
+                                                            originalPrice:
+                                                                createdOrder[
+                                                                        'amount'] /
+                                                                    100.toDouble(),
+                                                            discountedPrice:
+                                                                createdOrder[
+                                                                        'amount_due'] /
+                                                                    100.toDouble(),
+                                                            onPaynow: () {
+                                                              Navigator.pop(
+                                                                  buildContext);
+                                                              context
+                                                                  .read<
+                                                                      PaymentBloc>()
+                                                                  .add(
+                                                                    InitiatePaymentEvent(
+                                                                      sessionId:
+                                                                          booking
+                                                                              .id,
+                                                                      username:
+                                                                          userProfile?.username ??
+                                                                              "",
+                                                                      createdOrder:
+                                                                          createdOrder,
+                                                                      token:
+                                                                          token ??
+                                                                              "",
+                                                                      feature:
+                                                                          "session",
+                                                                      postPayment:
+                                                                          () =>
+                                                                              {
+                                                                        context
+                                                                            .read<
+                                                                                BookingBloc>()
+                                                                            .add(FetchBookingsEvent(userProfile?.username ??
+                                                                                ""))
+                                                                      }, // Pass your createBooking function
+                                                                    ),
+                                                                  );
+                                                            },
+                                                          ),
+                                                        );
+                                                      }
+                                                    },
+                                                    icon: const Icon(
+                                                        Icons.payment,
+                                                        size: 18),
+                                                    label:
+                                                        const Text('Pay Now'),
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          Colors.green,
+                                                      foregroundColor:
+                                                          Colors.white,
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
                                                         horizontal: 16,
                                                         vertical: 8,
                                                       ),
@@ -481,7 +615,9 @@ Navigator.pop(buildContext);
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              state is BookingErrorState ? state.message : 'Unknown error',
+                              state is BookingErrorState
+                                  ? state.message
+                                  : 'Unknown error',
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.error,
                                 fontSize: 16,
@@ -596,6 +732,36 @@ Navigator.pop(buildContext);
                   title: const Text('Mobile'),
                   subtitle: Text(state.userProfile.mobileNumber),
                 ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PaymentStatusScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Colors.tealAccent.shade700,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16.0, horizontal: 32.0),
+                    elevation: 8.0,
+                    shadowColor: Colors.tealAccent,
+                  ),
+                  child:const  Text(
+                    "View Payment",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18.0,
+                    ),
+                  ),
+                )
+              
               ],
             ),
           );
@@ -612,50 +778,53 @@ Navigator.pop(buildContext);
       appBar: AppBar(
         title: Text("GakudoAI"),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.payment),
-            onPressed: () async {
-             final prefs = await SharedPreferences.getInstance();
-             final token = prefs.getString(StorageConstants.authToken);
-             final userProfile = await UserService.getCurrentUser();
-             showDialog(
-               context: context,
-               builder: (BuildContext buildContext) {
-                 return AlertDialog(
-                   title: Text("Payment Consent"),
-                   content: Text("By clicking 'Yes', you consent to make payment for all features (chat, tests, and booking a session)."),
-                   actions: [
-                     TextButton(
-                       child: Text("Yes"),
-                       onPressed: () {
-                         context.read<PaymentBloc>().add(InitiatePaymentEvent(
-                           username: userProfile?.username??"",
-                           token: token??"",
-                           feature: "all",
-                           postPayment: () => {
-                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Payment Successful")))
-                           },
-                         ));
-                         Navigator.of(buildContext).pop();
-                       },
-                     ),
-                     TextButton(
-                       child: Text("No"),
-                       onPressed: () {
-                         Navigator.of(buildContext).pop();
-                       },
-                     ),
-                   ],
-                 );
-               },
-             );
-            },
-          ),
-          if(_selectedIndex==4)
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _handleLogout(context),
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.payment),
+          //   onPressed: () async {
+          //     final prefs = await SharedPreferences.getInstance();
+          //     final token = prefs.getString(StorageConstants.authToken);
+          //     final userProfile = await UserService.getCurrentUser();
+          //     showDialog(
+          //       context: context,
+          //       builder: (BuildContext buildContext) {
+          //         return AlertDialog(
+          //           title: Text("Payment Consent"),
+          //           content: Text(
+          //               "By clicking 'Yes', you consent to make payment for all features (chat, tests, and booking a session)."),
+          //           actions: [
+          //             TextButton(
+          //               child: Text("Yes"),
+          //               onPressed: () {
+          //                 context.read<PaymentBloc>().add(InitiatePaymentEvent(
+          //                       username: userProfile?.username ?? "",
+          //                       token: token ?? "",
+          //                       feature: "all",
+          //                       postPayment: () => {
+          //                         ScaffoldMessenger.of(context).showSnackBar(
+          //                             const SnackBar(
+          //                                 content: Text("Payment Successful")))
+          //                       },
+          //                     ));
+          //                 Navigator.of(buildContext).pop();
+          //               },
+          //             ),
+          //             TextButton(
+          //               child: Text("No"),
+          //               onPressed: () {
+          //                 Navigator.of(buildContext).pop();
+          //               },
+          //             ),
+          //           ],
+          //         );
+          //       },
+          //     );
+          //   },
+          // ),
+          if (_selectedIndex == 4)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () => _handleLogout(context),
+            ),
         ],
       ),
       body: _buildCurrentView(context),
@@ -762,6 +931,57 @@ Navigator.pop(buildContext);
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.primary,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

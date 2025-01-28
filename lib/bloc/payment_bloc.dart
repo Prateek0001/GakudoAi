@@ -1,4 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rx_logix/bloc/booking_event.dart';
+import 'package:rx_logix/bloc/booking_state.dart';
 import 'package:rx_logix/repositories/auth/auth_repository_impl.dart';
 import 'payment_event.dart';
 import 'payment_state.dart';
@@ -90,7 +92,7 @@ class PaymentBloc extends Bloc<PaymentEvent, PaymentState> {
               ),
             );
             if (postResponse==true) {
-              event.postPayment();
+              await event.postPayment();
               emit(PaymentSuccess());
             }else{
               emit(PaymentError("Payment failed"));

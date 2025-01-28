@@ -88,12 +88,12 @@ class _ProfileViewState extends State<ProfileView> {
                 floating: false,
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
-                  title: Text(
-                    'Profile',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
+                  // title: Text(
+                  //   'Profile',
+                  //   style: TextStyle(
+                  //     color: Theme.of(context).colorScheme.onPrimary,
+                  //   ),
+                  // ),
                   background: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
