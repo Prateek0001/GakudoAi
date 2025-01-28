@@ -17,7 +17,7 @@ class Quiz {
 }
 
 class Question {
-  final String id;
+  final dynamic id;
   final String question;
   final List<String> options;
 
