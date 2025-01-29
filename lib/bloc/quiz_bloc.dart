@@ -9,13 +9,15 @@ import 'quiz_event.dart';
 import 'quiz_state.dart';
 import '../constants/api_constants.dart';
 import '../constants/storage_constants.dart';
+import '../repositories/quiz/quiz_repository.dart';
 
 class QuizBloc extends Bloc<QuizEvent, QuizState> {
+  final QuizRepository quizRepository;
   List<String> completedQuizzes = [];
 
   final _prefs = SharedPreferences.getInstance();
 
-  QuizBloc() : super(QuizInitial()) {
+  QuizBloc(this.quizRepository) : super(QuizInitial()) {
     on<LoadQuizEvent>(_onLoadQuiz);
     on<SubmitQuizEvent>(_onSubmitQuiz);
     on<GenerateReportEvent>(_onGenerateReport);

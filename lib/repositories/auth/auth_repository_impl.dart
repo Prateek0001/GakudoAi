@@ -14,8 +14,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<String> login(String username, String password) async {
     try {
       final response = await http.post(
-        Uri.parse(
-            '${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}?username=$username&password=$password'),
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}?username=$username&password=$password'),
         headers: {'accept': 'application/json'},
       );
 

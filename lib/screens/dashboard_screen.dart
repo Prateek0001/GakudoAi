@@ -10,6 +10,7 @@ import 'package:rx_logix/constants/storage_constants.dart';
 import 'package:rx_logix/models/user_profile.dart';
 import 'package:rx_logix/repositories/auth/auth_repository_impl.dart';
 import 'package:rx_logix/repositories/chat/chat_repository.dart';
+import 'package:rx_logix/repositories/quiz/quiz_repository.dart';
 import 'package:rx_logix/screens/booking_details_screen.dart';
 import 'package:rx_logix/screens/booking_screen.dart';
 import 'package:rx_logix/screens/payment_dialog.dart';
@@ -207,7 +208,7 @@ class _DashboardViewState extends State<DashboardView> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => BlocProvider(
-                              create: (context) => QuizBloc(),
+                              create: (context) => QuizBloc(context.read<QuizRepository>()),
                               child: const QuizListScreen(),
                             ),
                           ),
@@ -227,7 +228,7 @@ class _DashboardViewState extends State<DashboardView> {
 
   Widget _buildTestView(BuildContext context) {
     return BlocProvider(
-      create: (context) => QuizBloc(),
+      create: (context) => QuizBloc(context.read<QuizRepository>()),
       child: const QuizListScreen(),
     );
   }

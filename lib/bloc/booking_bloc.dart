@@ -9,48 +9,31 @@ import '../models/booking.dart';
 import '../constants/api_constants.dart';
 import '../constants/storage_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../repositories/booking/booking_repository.dart';
 
 class BookingBloc extends Bloc<BookingEvent, BookingState> {
-  String currentBookingId="";
-  BookingBloc() : super(BookingInitial()) {
+  final BookingRepository bookingRepository;
+  String currentBookingId = "";
+
+  BookingBloc(this.bookingRepository) : super(BookingInitial()) {
     on<FetchBookingsEvent>(_onFetchBookings);
     on<LoadBookingsEvent>(_onLoadBookings);
     on<CreateBookingEvent>(_onCreateBooking);
     on<CancelBookingEvent>(_onCancelBooking);
     on<RescheduleBookingEvent>(_onRescheduleBooking);
-    on<UpdateBookingIdEvent>((event, emit) => currentBookingId = event.newBookingId,);
+    on<UpdateBookingIdEvent>((event, emit) => currentBookingId = event.newBookingId);
   }
 
-  Future<void> _onFetchBookings(
-    FetchBookingsEvent event,
-    Emitter<BookingState> emit,
-  ) async {
+  Future<void> _onFetchBookings(FetchBookingsEvent event, Emitter<BookingState> emit) async {
     try {
       emit(BookingLoadingState());
-
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(StorageConstants.authToken);
-
+      
       if (token == null) throw Exception('Not authenticated');
-
-      final response = await http.get(
-        Uri.parse(
-            '${ApiConstants.baseUrl}/api/v1/fetch-booking/?username=${event.username}'),
-        headers: {
-          'accept': 'application/json',
-          'api-key': token,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final bookings = (data['booking_list'] as List)
-            .map((booking) => Booking.fromJson(booking))
-            .toList();
-        emit(BookingsLoadedState(bookings));
-      } else {
-        throw Exception('Failed to fetch bookings');
-      }
+      
+      final bookings = await bookingRepository.fetchBookings(event.username, token);
+      emit(BookingsLoadedState(bookings));
     } catch (e) {
       emit(BookingErrorState(e.toString()));
     }
@@ -87,50 +70,23 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     // TODO: Implement reschedule booking
   }
 
-  Future<void> _onCreateBooking(
-    CreateBookingEvent event,
-    Emitter<BookingState> emit,
-  ) async {
+  Future<void> _onCreateBooking(CreateBookingEvent event, Emitter<BookingState> emit) async {
     try {
       emit(BookingLoadingState());
-
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(StorageConstants.authToken);
-
+      
       if (token == null) throw Exception('Not authenticated');
-
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/api/v1/booking/'),
-        headers: {
-          'accept': 'application/json',
-          'api-key': token,
-          'Content-Type': 'application/json',
-        },
-
-        /* 
-        new payload to be added 
-
-        {"bookingId":"check123_cc33fcad-744c-478e-b848-b8d099931169","username":"check123","bookingTime":"2025-01-09T17:21:17.346Z","dateTime":"2025-01-10T18:30:00.000Z","remark":"testing"}
-
-        */
-        body: jsonEncode({
-          'bookingId': "${event.username}_${const Uuid().v4()}",
-          'username': event.username,
-          'dateTime': event.dateTime.toUtc().toIso8601String(),
-          'bookingTime' : DateTime.now().toUtc().toIso8601String(),
-          'remark': event.remark,
-        }),
+      
+      final bookingId = await bookingRepository.createBooking(
+        username: event.username,
+        dateTime: event.dateTime,
+        remark: event.remark,
+        token: token,
       );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        emit(BookingCreatedState(data['id']));
-
-        // Immediately fetch updated booking list
-        add(FetchBookingsEvent(event.username));
-      } else {
-        throw Exception('Failed to create booking');
-      }
+      
+      emit(BookingCreatedState(bookingId));
+      add(FetchBookingsEvent(event.username));
     } catch (e) {
       emit(BookingErrorState(e.toString()));
     }

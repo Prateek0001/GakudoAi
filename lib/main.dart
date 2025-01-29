@@ -21,6 +21,10 @@ import 'repositories/chat/chat_repository_impl.dart';
 import 'bloc/quiz_bloc.dart';
 import 'bloc/booking_bloc.dart';
 import 'bloc/payment_bloc.dart';
+import 'repositories/booking/booking_repository.dart';
+import 'repositories/booking/booking_repository_impl.dart';
+import 'repositories/quiz/quiz_repository.dart';
+import 'repositories/quiz/quiz_repository_impl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,11 +56,18 @@ void main() async {
         RepositoryProvider<ChatRepository>(
           create: (context) => ChatRepositoryImpl(),
         ),
+        RepositoryProvider<QuizRepository>(
+          create: (context) => QuizRepositoryImpl(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (context) => QuizBloc()),
-          BlocProvider(create: (context) => BookingBloc()),
+          BlocProvider(
+            create: (context) => QuizBloc(QuizRepositoryImpl()),
+          ),
+          BlocProvider(
+            create: (context) => BookingBloc(BookingRepositoryImpl()),
+          ),
           BlocProvider(create: (context) => PaymentBloc()),
         ],
         child: ChangeNotifierProvider(

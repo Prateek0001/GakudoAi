@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rx_logix/repositories/booking/booking_repository.dart';
 import 'package:rx_logix/screens/booking_screen.dart';
 import '../bloc/booking_bloc.dart';
 import '../bloc/booking_event.dart';
 import '../bloc/booking_state.dart';
 import 'booking_details_screen.dart';
+
 
 class BookingHistoryScreen extends StatelessWidget {
   const BookingHistoryScreen({super.key});
@@ -12,7 +14,7 @@ class BookingHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => BookingBloc()..add(LoadBookingsEvent()),
+      create: (context) => BookingBloc(context.read<BookingRepository>())..add(LoadBookingsEvent()),
       child: const BookingHistoryView(),
     );
   }
